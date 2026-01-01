@@ -1,0 +1,916 @@
+//#region "Declaration"
+
+const baseURLValue = baseURL;
+var addEditBtnFlag = 0;
+var datatableReload = 0;
+const token = localStorage.getItem('token');
+var selectedIds = [];
+selectedRows = [];
+let scenariosList = []; // Global variable to hold scenario data
+let scenarioIDSelected = "";
+let salesTypeSelected = "";
+
+let salesTypeSelectedArr = [];
+let itemCounter = 0; // counter to track current index in salesTypeSelectedArr
+
+let transactionTypeID = 0;
+let rate_ID = 0;
+let rate_Desc = "";
+let sro_ID = 0;
+let sro_Desc = "";
+let sro_item_ID = 0;
+let sro_item_Desc = "";
+
+//#endregion
+
+//#region "Page Load"
+
+$(document).ready(function () {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("fromDate").value = today;
+    document.getElementById("toDate").value = today;
+
+    $("#userName").val(localStorage.getItem('userName'));
+    $('#btnSave').text('SAVE');
+    $("#carcassModalTitleText").text('Environment');
+    LoadScenarios();
+    $("#environment").text(localStorage.getItem('environmentName'));
+    if (localStorage.getItem('pushToken') == null || localStorage.getItem('pushToken') == "") {
+        $("#carcassModal").modal('show');
+    }
+    $("#tokenValueInput").val(localStorage.getItem('pushToken'));
+});
+
+$("#environment").click(function () {
+    $("#carcassModal").modal('show');
+});
+
+//#endregion
+
+//#region Load Invoices from GP
+
+function LoadInvoices(frmDate, toDate) {
+
+    $('#loaderRow').show();
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+    } else {
+        const obj = {
+            fromDate: frmDate,
+            toDate: toDate
+        }
+        var api_url = baseURLValue + 'getSalesReport';
+        makeApiCall({
+            url: api_url,
+            method: 'POST',
+            token: token,
+            data: obj, // You can pass any data you want to send
+            successCallback: function (result) {
+                FillDataTable(result.actualData);
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+    }
+};
+
+function FillDataTable(jsonData) {
+    var table = $("#" + 'carcassTable');
+    var tbody = table.find('tbody');
+
+    // Clear the existing data in tbody
+    tbody.empty();
+
+    // Create an array to hold all rows of table
+    var rows = [];
+
+    // Initialize or reinitialize DataTable
+    if ($.fn.DataTable.isDataTable(table)) {
+        table.DataTable().clear().destroy(); // Destroy the previous instance
+    }
+
+    // Loop through the data and create table rows
+    jsonData.forEach(function (data, index) {
+        var row = $('<tr/>');
+        var status = data['TrxStatus'].trim();
+        var icon = '';
+        var color = '';
+
+        if (status === 'Un-Posted') {
+            icon = '&#10006;'; // ✗ cross
+            color = 'red';
+        } else if (status === 'Posted') {
+            icon = '&#10004;'; // ✓ tick
+            color = 'green';
+        }
+        row.append('<td><input type="checkbox" class="row-checkbox"></td>');
+        row.append('<td style="text-align: center; color:' + color + ';" title="' + status + '">' + icon + '</td>');
+        row.append('<td>' + data['Document No.'].trim() + '</td>'); //Invoice No or "invoiceRefNo"
+        row.append('<td>Sale Invoice</td>');   //Invoice Type
+
+        // row.append('<td>' + data['Item Number'].trim() + '</td>');  //Item No or "sroItemSerialNo"
+        const sroItemSerialNoCellID = "sroItemSchNo-" + index;
+        // row.append('<td id="' + sroItemSerialNoCellID + '"></td>');  //Item No or "sroItemSerialNo"
+        row.append('<td>' + data['Item Number'].trim() + '</td>');   //Zultec Item No
+        row.append('<td id="' + sroItemSerialNoCellID + '"></td>');  //Item No or "sroItemSerialNo"
+        row.append('<td>' + data['Item Description'].trim() + '</td>'); //Item Description or "productDescription"
+
+
+        //#region Buyer Information
+
+        row.append('<td>' + data['NTN#'].trim().split('-')[0] + '</td>'); //Customer NTN# or "buyerNTNCNIC"
+        row.append('<td>' + data['Customer Name'].trim() + '</td>');    //Name of Custom or "buyerBusinessName"
+        if (data['Location'].trim() != 'Karachi') {
+            row.append('<td>' + 'Punjab' + '</td>');    //Province or "buyerProvince"
+        }
+        else {
+            row.append('<td>' + 'Sindh' + '</td>');    //Province or "buyerProvince"
+        }
+        row.append('<td>' + data['Location'].trim() + '</td>'); //Location/Station or "buyerAddress"
+
+        row.append('<td>Registered</td>'); //Buyer Registration Type or "buyerRegistrationType"
+
+        //#endregion
+
+        //#region Seller Information
+
+        row.append('<td>1522054</td>');  //Seller NTNCNIC or "sellerNTNCNIC"
+        row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
+        if (data['Location'] != 'Karachi') {
+            row.append('<td>Punjab</td>');  //Seller Province or "sellerProvince"
+        }
+        else {
+            row.append('<td>Sindh</td>');  //Seller Province or "sellerProvince"
+        }
+        row.append('<td>Korangi</td>');  //Seller Address or "sellerAddress"
+
+        //#endregion
+
+        row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
+
+        // row.append('<td>' + data['HS Code'].split("-")[0].trim() + '</td>'); //HS Code or "hsCode"
+
+        // if (data['HS Code'].trim() == "") {
+        if ((data['HS Code'] ?? "").trim() === "") {
+            row.append('<td></td>'); //HS Code or "hsCode"
+            row.append('<td></td>'); //HS Code or "hsCode"
+        }
+        else {
+            if (data['HS Code'].trim().includes("-")) {
+                row.append('<td>' + data['HS Code'].split("-")[0].trim() + '' + '</td>'); //HS Code or "hsCode"
+                row.append('<td>' + data['HS Code'].split("-")[1].trim() + '</td>'); //HS Code or "hsCode"    
+            }
+            else {
+                row.append('<td>' + data['HS Code'].split(" ")[0].trim() + ':-' + '</td>'); //HS Code or "hsCode"
+                row.append('<td></td>'); //HS Code or "hsCode"    
+            }
+        }
+
+        if (data['HS Code'] && data['HS Code'].trim() !== "") {
+            const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
+            row.append('<td id="' + uomCellID + '">Loading...</td>');
+            fetchUOMFromAPI(data['HS Code'].trim(), uomCellID);
+        }
+        else {
+            const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
+            row.append('<td id="' + uomCellID + '"></td>');
+        }
+
+        row.append('<td>' + data['Category'] + '</td>')
+
+        let scenarioOptions = scenariosList.map(s => {
+            return `<option value="${s.ID}">${s.Value}</option>`;
+        }).join('');
+
+        // Add dropdown to row
+        row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
+
+        const rateCellID = 'rate-' + index;
+        row.append('<td id="' + rateCellID + '">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');
+
+        row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
+        row.append('<td>' + 0 + '</td>');   //Total or "totalValues"
+
+        //row.append('<td style="text-align: right;">' + (Number(data['Net Amount']) + Number(data['Tax Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
+        const netAmountCellID = 'netAmount-' + index;
+        row.append('<td id="' + netAmountCellID + '" style="text-align: right;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
+
+        row.append('<td>0</td>'); //Fixed Notified Value Or Retail Price or "fixedNotifiedValueOrRetailPrice"
+
+        const salesTaxCellID = 'salesTax-' + index;
+        if (data['Tax Schedule ID'].split(" ")[1].includes("%")) {
+            let value = data["Tax Schedule ID"].split(" ")[1]; // e.g., "18%"
+            let numberOnly = value.match(/\d+/)[0]; // "18"
+            let taxRate = Number(numberOnly); // 18 as number
+
+            let netAmount = Number(data["Net Amount"]); // e.g., 100
+
+            let taxAmount = (netAmount * taxRate) / 100;
+            row.append('<td id="' + salesTaxCellID + '" style="text-align: right;">' + Number(taxAmount).toLocaleString() + '</td>');  //Sales Tax Applicable or "salesTaxApplicable"
+        }
+        else {
+            row.append('<td style="text-align: right;">0</td>');  //Sales Tax Applicable or "salesTaxApplicable"
+        }
+
+        // row.append('<td>' + 0 + '</td>');   //Sales Tax Applicable or "salesTaxApplicable"
+        row.append('<td>' + 0 + '</td>');   //Sales Tax With Held At Source or "salesTaxWithheldAtSource"
+        row.append('<td></td>');    //Extra Tax or "extraTax"
+        row.append('<td>' + 0 + '</td>');   //Further Tax or "furtherTax"
+        // row.append('<td></td>');    //Sro ScheduleNo or "sroScheduleNo"
+
+        const sroSchCellID = "sroSch-" + index;
+        row.append('<td id="' + sroSchCellID + '"></td>');  //Item No or "sroItemSerialNo"
+
+        row.append('<td>' + 0 + '</td>');   //FED Payable or "fedPayable"
+        row.append('<td>' + 0 + '</td>');   //Discount or "discount"
+
+        // row.append('<td>' + data['Sales Type'].trim() + '</td>');   //Sales Type or "saleType"
+        // row.append('<td>' + $("#scenariosDD option:selected").text().split('-')[1] + '</td>');   //Sales Type or "saleType"
+
+        row.append(createDropdownMenu(data)); // Dropdown menu
+
+        rows.push(row);
+    });
+
+    // Append all rows at once
+    tbody.append(rows);
+
+    $('#loaderRow').hide();
+
+    // table.DataTable({
+    //     "dom": '<"row justify-content-between top-information"lf>rt<"row justify-content-between bottom-information"ip><"clear">'
+    // });
+    table.DataTable({
+        "order": [[2, "asc"]],   // Sort by column index 2 (Document No)
+        "dom": '<"row justify-content-between top-information"lf>rt<"row justify-content-between bottom-information"ip><"clear">'
+    });
+};
+
+// Function to create the dropdown menu
+function createDropdownMenu(data) {
+    // Create the dropdown menu with edit and delete options
+    return $('<td style="text-align: center;">').append(
+        $('<div/>', { 'class': 'dropdown' }).append(
+            $('<button/>', {
+                'type': 'button',
+                'class': 'btn p-0 dropdown-toggle hide-arrow',
+                'data-bs-toggle': 'dropdown'
+            }).append(
+                $('<i/>', { 'class': 'bx bx-dots-vertical-rounded' })
+            ),
+            $('<div/>', { 'class': 'dropdown-menu' }).append(
+                $('<a/>', {
+                    'class': 'dropdown-item',
+                    'style': 'cursor: pointer',
+                    'data-id': data['ID'],  // Store RoleID in a data attribute
+                    'data-code': data['Code'],      // Store Code in a data attribute
+                    'data-name': data['Name'], // Store Name
+                    'data-nameAr': data['NameAr'], // Store NameAr
+                    'data-line-type-id': data['LineTypeID'], // Store LineTypeID
+                    'id': 'validateBtn'  // unique id for edit button
+                }).append(
+                    ' Validate', $('<i/>', { 'class': 'bx bx-key me-1' })
+                ),
+            )
+        )
+    );
+};
+
+//#endregion
+
+//#region Validate Buttons
+
+// Event delegation for dynamically created buttons
+$(document).on('click', '#validateBtn', function EditBtn() {
+    return;
+    addEditBtnFlag = 1;
+    var ID = $(this).data('id');
+    var code = $(this).data('code');
+    var name = $(this).data('name');
+    var nameAr = $(this).data('namear');
+    var lineTypeID = $(this).data('line-type-id');
+    $('#carcassIDHiddenField').val(ID);
+    $('#animalCategoryDD').val(lineTypeID);
+    $('#code').val(code);
+    $('#name').val(name);
+    $('#nameAr').val(nameAr);
+    $('#btnSave').text('Update Changes');
+    $("#carcassModalTitleText").text('Edit Carcass Information');
+    $("#carcassModal").modal('show')
+});
+
+//#endregion
+
+//#region Modal Close Buttons
+
+$("#btnClose").click(function CloseModal() {
+    $('#animalCategoryDD').val(0);
+    $('#code').val('');
+    $('#name').val('');
+    $('#nameAr').val('');
+});
+
+$("#crossBtn").click(function CloseModal() {
+    $('#animalCategoryDD').val(0);
+    $('#code').val('');
+    $('#name').val('');
+    $('#nameAr').val('');
+});
+
+//#endregion
+
+//#region "Select All or Indivisual Selection option"
+
+// Toggle all checkboxes when master checkbox is clicked
+$('#carcassTable').on('change', '#selectAll', function () {
+    var isChecked = $(this).is(':checked');
+    $('.row-checkbox').prop('checked', isChecked);
+    if (isChecked) {
+        $('.row-checkbox').each(function () {
+            var $row = $(this).closest('tr'); // Get the closest row
+            var rowData = [];
+
+            $row.find('td').each(function () {
+                rowData.push($(this).text().trim());
+            });
+            var hsCodeIndex = 16;
+            var hsCode = rowData[hsCodeIndex];
+            var invoiceNoIndex = 2;
+            var invoiceNo = rowData[invoiceNoIndex];
+            if (!hsCode) {
+                Swal.fire({
+                    icon: 'warning',
+                    html: 'HS Code is required for Invoice# <b>' + invoiceNo + '</b>.',
+                });
+                $(this).prop('checked', false); // Uncheck the checkbox
+                return; // Do not continue processing this row
+            }
+            selectedRows.push(rowData);
+        });
+    }
+});
+
+$('#carcassTable').on('change', '.row-checkbox', function () {
+debugger
+    var id = $(this).val();
+    var $row = $(this).closest('tr');
+
+    // Collect row data for the clicked row
+    var rowData = [];
+    $row.find('td').each(function () {
+        rowData.push($(this).text().trim());
+    });
+
+    var invoiceNoIndex = 2;
+    var hsCodeIndex = 17;
+    var scenarioIndex = 20;
+    var invoiceNo = rowData[invoiceNoIndex];
+    var scenarioDesc = rowData[scenarioIndex];
+    var alertCheck = "";
+
+    var scenarioDescCheck;
+
+    // Find all rows with same invoice number
+    var matchingRows = $('#carcassTable tbody tr').filter(function () {
+        return $(this).find('td').eq(invoiceNoIndex).text().trim() === invoiceNo;
+    });
+
+    if ($(this).is(':checked')) {
+
+        // Validate HS Code on all rows with the same invoice number
+        let invalidRow = null;
+
+        matchingRows.each(function () {
+            var hs = $(this).find('td').eq(hsCodeIndex).text().trim();
+            if (!hs) {
+                invalidRow = $(this);
+                alertCheck = "HS Code"
+                return false;
+            }
+        });
+
+        if (invalidRow) {
+            if (alertCheck == "Select Scenario") {
+                Swal.fire({
+                    icon: 'warning',
+                    html: 'Select Scenario for invoice# <b>' + invoiceNo + '</b>.',
+                });
+            }
+            else if (alertCheck == "HS Code") {
+                Swal.fire({
+                    icon: 'warning',
+                    html: 'HS Code is required for Invoice# <b>' + invoiceNo + '</b>.',
+                });
+            }
+
+            // Uncheck ALL matching rows
+            matchingRows.find('.row-checkbox').prop('checked', false);
+            return;
+        }
+
+        // Check all matching checkboxes
+        // matchingRows.find('.row-checkbox').each(function () {
+        //     var rowId = $(this).val();
+        //     $(this).prop('checked', true);
+
+        //     // Add ID
+        //     if (!selectedIds.includes(rowId)) {
+        //         selectedIds.push(rowId);
+        //     }
+
+        //     // Add row data
+        //     var rData = [];
+        //     $(this).closest('tr').find('td').each(function () {
+        //         rData.push($(this).text().trim());
+        //     });
+
+        //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
+        //     if (!exists) {
+        //         selectedRows.push(rData);
+                selectedRows.push(rowData);
+        //     }
+        // });
+
+    } else {
+        // Uncheck all rows with same invoice number
+        matchingRows.find('.row-checkbox').each(function () {
+            var rowId = $(this).val();
+            $(this).prop('checked', false);
+
+            // Remove from selectedIds
+            selectedIds = selectedIds.filter(id => id !== rowId);
+
+            // Remove row-data
+            var rData = [];
+            $(this).closest('tr').find('td').each(function () {
+                rData.push($(this).text().trim());
+            });
+
+            selectedRows = selectedRows.filter(r => JSON.stringify(r) !== JSON.stringify(rData));
+        });
+    }
+
+    // Update "select all" checkbox
+    var total = $('.row-checkbox').length;
+    var checked = $('.row-checkbox:checked').length;
+    $('#selectAll').prop('checked', total === checked);
+});
+
+
+//#endregion
+
+//#region "Save Token in hidden field"
+
+$("#btnSave").click(function SaveEditButton() {
+    if ($("#tokenValue").val() == "") {
+        alert("Please select an Environment.");
+    }
+    if ($("#tokenDD").val() == "pushInvoiceToSandboxToken") {
+        $("#environment").text("(Sandbox Environment)");
+        localStorage.setItem('environmentName', "(Sandbox Environment)");
+    }
+    else if ($("#tokenDD").val() == "pushInvoiceToProductionToken") {
+        $("#environment").text("(Production Environment)");
+        localStorage.setItem('environmentName', "(Production Environment)");
+    }
+    else {
+
+    }
+    $("#tokenValueInput").val($("#tokenValue").val());
+    localStorage.setItem('pushToken', $("#tokenValue").val())
+    $("#carcassModal").modal('hide');
+
+});
+
+//#endregion
+
+//#region "Fetch Token on Environment Selection"
+
+$("#tokenDD").change(function () {
+
+    if ($("#tokenDD").val() != "select") {
+        if (!localStorage.getItem('token')) {
+            window.location.href = baseURLValue;
+            $("#tokenValue").val("");
+        } else {
+            var api_url = baseURLValue + 'getTokenCallEncrypted';
+            $("#tokenValue").val("");
+            $("#tokenValueInput").val("");
+
+            const tokenObj = {
+                tokenKey: $("#tokenDD").val()
+            };
+            makeApiCall({
+                url: api_url,
+                method: 'POST',
+                token: token,
+                data: tokenObj, // You can pass any data you want to send
+                successCallback: function (result) {
+
+                    $("#tokenValue").val(result.token);
+                    $("#tokenValueInput").val(result.token);
+                },
+                errorCallback: function (xhr, status, error) {
+                    console.error("Error:", error);
+                    $("#tokenValue").val("");
+                    $("#tokenValueInput").val("");
+                }
+            });
+
+        }
+
+    }
+    else {
+        $("#tokenValue").val("");
+        $("#tokenValueInput").val("");
+    }
+
+});
+
+//#endregion
+
+//#region "Search Btn click"
+
+$("#searchBtn").click(function () {
+
+    var fromDateSelect = $("#fromDate").val();
+    var toDateSelect = $("#toDate").val();
+
+    if (fromDateSelect == "" || toDateSelect == "") {
+        alert("Error: Invalid Date.");
+        return;
+    };
+
+    if (toDateSelect < fromDateSelect) {
+        alert("Error: To Date can't be less then From Date.");
+        return;
+    };
+
+    LoadInvoices(fromDateSelect, toDateSelect);
+});
+
+//#endregion
+
+//#region "Push to FBR button click"
+
+$("#pushToFBRBtn").click(function AddBtn() {
+    if (selectedRows.length === 0) {
+        alert("Please select an invoice to push.");
+        return;
+    }
+    const keys = [
+        "invoiceRefNo", "invoiceType", "zultecItemNo", "sroItemSerialNo", "productDescription",
+        "buyerNTNCNIC", "buyerBusinessName", "buyerProvince", "buyerAddress", "buyerRegistrationType",
+        "sellerNTNCNIC", "sellerBusinessName", "sellerProvince", "sellerAddress",
+        "invoiceDate", "hsCode", "hsCodeDesc", "uoM", "category", "scenarioId", "rate", "quantity",
+        "totalValues", "valueSalesExcludingST", "fixedNotifiedValueOrRetailPrice",
+        "salesTaxApplicable", "salesTaxWithheldAtSource", "extraTax", "furtherTax",
+        "sroScheduleNo", "fedPayable", "discount", "saleType"
+    ];
+    let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
+    const rawDataObjects = cleanedRows.map(valuesArr => {
+        const obj = {};
+        debugger
+        keys.forEach((key, idx) => {
+            if (idx !== 2 && idx !== 16 && idx !== 18) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18
+                obj[key] = valuesArr[idx];
+            }
+        });
+        return obj;
+    });
+    
+    const groupedByInvoice = {};
+
+    rawDataObjects.forEach(item => {
+    const invoiceKey = item.invoiceRefNo;
+    if (!groupedByInvoice[invoiceKey]) {
+        groupedByInvoice[invoiceKey] = {
+            invoiceRefNo: item.invoiceRefNo,
+            invoiceType: item.invoiceType,
+            invoiceDate: item.invoiceDate,
+            sellerNTNCNIC: item.sellerNTNCNIC,
+            sellerBusinessName: item.sellerBusinessName,
+            sellerProvince: item.sellerProvince,
+            sellerAddress: item.sellerAddress,
+            buyerNTNCNIC: item.buyerNTNCNIC,
+            buyerBusinessName: item.buyerBusinessName,
+            buyerProvince: item.buyerProvince,
+            buyerAddress: item.buyerAddress,
+            buyerRegistrationType: item.buyerRegistrationType,
+            scenarioId: scenarioIDSelected,
+            items: []
+        };
+    }
+
+    groupedByInvoice[invoiceKey].items.push({
+        hsCode: item.hsCode.split("-")[0],
+        productDescription: item.productDescription,
+        rate: item.rate,
+        uoM: item.uoM,
+        quantity: Number(item.quantity),
+        totalValues: Number(item.totalValues.replace(/,/g, '')),
+        valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
+        fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
+        salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
+        salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
+        extraTax: item.extraTax,
+        furtherTax: Number(item.furtherTax),
+        sroScheduleNo: item.sroScheduleNo,
+        fedPayable: Number(item.fedPayable),
+        discount: Number(item.discount),
+        saleType: salesTypeSelectedArr[itemCounter], // assign the specific element
+        sroItemSerialNo: item.sroItemSerialNo
+    });
+
+    itemCounter++; // increment counter for next item
+});
+
+const finalPayload = Object.values(groupedByInvoice);
+    debugger
+    const FBR_token = $("#tokenValueInput").val();
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+        $("#tokenValue").val("");
+    } else {
+        var api_url = baseURLValue + 'getTokenCallDecrypted';
+        $("#tokenValue").val("");
+        const tokenObj = {
+            decTokenKey: FBR_token
+        };
+        makeApiCall({
+            url: api_url,
+            method: 'POST',
+            token: token,
+            data: tokenObj,
+            successCallback: function (result) {
+                const fbrAPIToken = result.token;
+
+                if (!localStorage.getItem('token')) {
+                    window.location.href = baseURLValue;
+                } else {
+                    finalPayload.forEach((finalPayload, index) => {
+                        $.ajax({
+                            url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            headers: {
+                                'Authorization': 'Bearer ' + fbrAPIToken.trim()
+                            },
+                            data: JSON.stringify(finalPayload),
+                            success: function (response) {
+                                if (response.validationResponse.status == "Invalid") {
+                                    alert(response.validationResponse.invoiceStatuses[0]['error'])
+                                }
+                                else {
+                                    if (!localStorage.getItem('token')) {
+                                        window.location.href = baseURLValue;
+                                    } else {
+                                        var totalRows = response.validationResponse.invoiceStatuses.length;
+                                        for (let i = 0; i < response.validationResponse.invoiceStatuses.length; i++) {
+                                            const obj = {
+                                                Sopnumbr: finalPayload.invoiceRefNo,
+                                                FBR_InvoiceNo: response.validationResponse.invoiceStatuses[i]['invoiceNo'],
+                                                Dated: response.dated,
+                                                Status: response.validationResponse.invoiceStatuses[i]['status'],
+                                                StatusCode: response.validationResponse.invoiceStatuses[i]['statusCode'],
+                                                ScenarioID: scenarioIDSelected,
+                                                ScenarioDesc: salesTypeSelected
+                                            };
+                                            var api_url = baseURLValue + 'InsertFBR_Response';
+                                            makeApiCall({
+                                                url: api_url,
+                                                method: 'POST',
+                                                token: token,
+                                                data: obj, // You can pass any data you want to send
+                                                successCallback: function (result) {
+                                                    if ((i + 1) == totalRows) {
+                                                        alert("Success: " + result.actualData[0]["Message"]);
+                                                        window.location.href = baseURLValue + 'invoices';
+                                                    }
+                                                },
+                                                errorCallback: function (xhr, status, error) {
+                                                    alert("Bad Request: " + xhr.responseText)
+                                                    console.error("Error:", error, xhr.responseText);
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
+                                alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                            }
+
+                        });
+                    });
+                }
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+                $("#tokenValue").val("");
+            }
+        });
+    };
+});
+
+//#endregion
+
+//#region "Load Scenarios"
+
+function LoadScenarios() {
+
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+    } else {
+
+        var api_url = baseURLValue + 'getScenarios';
+        makeApiCall({
+            url: api_url,
+            method: 'GET',
+            token: token,
+            data: {}, // You can pass any data you want to send
+            successCallback: function (result) {
+                scenariosList = result.actualData || [];
+                // Add default "Select Scenario" option at the beginning
+                scenariosList.unshift({ ID: 0, Value: 'Select Scenario' });
+                FillDropDown('scenariosDD', 'Select Scenario', result.actualData)
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+
+    }
+};
+
+//#endregion
+
+//#region "Get UOM Against HS Code"
+
+function fetchUOMFromAPI(hsCode, targetCellId) {
+    var settings = {
+        "url": 'https://gw.fbr.gov.pk/pdi/v2/HS_UOM?hs_code=' + hsCode.split("-")[0] + '&annexure_id=3',
+        "method": "GET",
+        "timeout": 0,
+        "headers": {
+            "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+            //   "Cookie": "JSESSIONID=HDCez6mog7ZHkUSj15spUh-g7TiCGto2IHkrziec.i01-irisdmz55; cookiesession1=678B28F2CB763E08E0DF447115BEDAFB"
+        },
+    };
+
+    $.ajax(settings).done(function (response) {
+        // const uom = response[0]["description"] || 'N/A';
+        const uom = response?.[0]?.description ?? 'N/A';
+        $('#' + targetCellId).text(uom);
+    });
+}
+
+//#endregion
+
+//#region "Scenario Dropdown change"
+
+$(document).on('change', '.scenario-dropdown', function () {
+ 
+    const $dropdown = $(this);
+    const $row = $dropdown.closest('tr');           // Get the parent <tr>
+
+    const $sroItemSchNoCell = $row.find('td[id^="sroItemSchNo-"]');
+    const colSROItemSchNoID = $sroItemSchNoCell.attr('id');
+
+    const $rateCell = $row.find('td[id^="rate-"]'); // any td with id like rate-1, rate-2, etc.
+    const colRateID = $rateCell.attr('id');            // 'rate-1'
+
+    const $netAmountCell = $row.find('td[id^="netAmount-"]');
+    const netAmountValue = $netAmountCell.text().trim();      // text inside the cell
+
+    const $salesTaxCell = $row.find('td[id^="salesTax-"]');
+    const colSalesTaxID = $salesTaxCell.attr('id');
+
+    const $sroSchCell = $row.find('td[id^="sroSch-"]');
+    const colSROSchID = $sroSchCell.attr('id');
+
+    const selectedText = $(this).find('option:selected').text();
+
+    scenarioIDSelected = selectedText.split(" - ")[0].trim();     //Scenario ID
+    salesTypeSelected = selectedText.split(" - ")[1].trim();      //Description
+
+    salesTypeSelectedArr.push(salesTypeSelected);
+
+    // You can store this in a variable, update UI, or make an API call, etc.
+    if (scenarioIDSelected != "SN001") {
+
+        var settings = {
+            "url": 'https://gw.fbr.gov.pk/pdi/v1/transtypecode',
+            "method": "GET",
+            "timeout": 0,
+            "headers": {
+                "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+            },
+        };
+
+        $.ajax(settings).done(function (transactionTypesResponse) {
+            for (let i = 0; i < transactionTypesResponse.length; i++) {
+                if (transactionTypesResponse[i]['transactioN_DESC'].trim() == salesTypeSelected) {
+
+                    transactionTypeID = Number(transactionTypesResponse[i]['transactioN_TYPE_ID']);
+                    break;
+                }
+            }
+            var settings = {
+                "url": 'https://gw.fbr.gov.pk/pdi/v2/SaleTypeToRate?date=02-Sep-2025&transTypeId=' + transactionTypeID + '&originationSupplier=8',
+                "method": "GET",
+                "timeout": 0,
+                "headers": {
+                    "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+                },
+            };
+
+            $.ajax(settings).done(function (SaleTypeToRateResponse) {
+
+                if (scenarioIDSelected == "SN005") {    //Goods at Reduced Rate
+                    rate_ID = 109; //Number(SaleTypeToRateResponse[0]['ratE_ID']); 
+                    rate_Desc = "5%"//SaleTypeToRateResponse[0]['ratE_DESC'].trim();
+                    $("#" + colRateID).text(rate_Desc);
+                }
+                else {
+                    rate_ID = Number(SaleTypeToRateResponse[0]['ratE_ID']);
+                    rate_Desc = SaleTypeToRateResponse[0]['ratE_DESC'].trim();
+                    $("#" + colRateID).text(rate_Desc);
+                    if (!rate_Desc.includes("%")) {
+                        $("#" + colSalesTaxID).text("0")
+                    }
+                    else {
+                        let numberOnly = rate_Desc.match(/\d+/)[0]; // "18"
+                        let taxRate = Number(numberOnly); // 18 as number
+                        if (taxRate != 0) {
+                            var res = (netAmountValue * taxRate) / 100;
+                            $("#" + colSalesTaxID).text(res);
+                        }
+                        else {
+                            $("#" + colSalesTaxID).text("0");
+                        }
+                    }
+                }
+
+                var settings = {
+                    "url": 'https://gw.fbr.gov.pk/pdi/v1/SroSchedule?rate_id=' + rate_ID + '&date=02-Sep-2025&origination_supplier_csv=8',
+                    "method": "GET",
+                    "timeout": 0,
+                    "headers": {
+                        "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+                    },
+                };
+                $.ajax(settings).done(function (SroScheduleResponse) {
+
+                    sro_ID = Number(SroScheduleResponse[0]['srO_ID']);
+                    sro_Desc = SroScheduleResponse[0]['srO_DESC'].trim();
+                    $("#" + colSROSchID).text(sro_Desc);
+
+                    var settings = {
+                        "url": 'https://gw.fbr.gov.pk/pdi/v2/SROItem?date=2025-09-04&sro_id=' + sro_ID,
+                        "method": "GET",
+                        "timeout": 0,
+                        "headers": {
+                            "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+                        },
+                    };
+                    $.ajax(settings).done(function (SroItemResponse) {
+
+                        if (scenarioIDSelected == "SN006") {
+                            sro_item_ID = 18130;
+                            sro_item_Desc = "166";
+                            $("#" + colSROItemSchNoID).text(sro_item_Desc);
+                        }
+                        else {
+                            sro_item_ID = Number(SroItemResponse[0]['srO_ITEM_ID']);
+                            sro_item_Desc = SroItemResponse[0]['srO_ITEM_DESC'].trim();
+                            $("#" + colSROItemSchNoID).text(sro_item_Desc);
+                        }
+                    });
+
+                });
+            });
+        });
+    }
+    else {
+
+        let rate = "18%"
+        let numberOnly = "18"; // "18"
+        const taxRate = Number(numberOnly); // 18 as number
+        if (taxRate != 0) {
+            const cleanedValue = netAmountValue.replace(/[^0-9.-]+/g, ''); // remove anything that isn't a digit, dot, or minus
+            const result = Number(cleanedValue);
+            var res = (result * taxRate) / 100;
+            $("#" + colRateID).text(rate);
+            // $("#" + colSalesTaxID).text(res);
+        }
+        else {
+            $("#" + colRateID).text(rate);
+            // $("#" + colSalesTaxID).text("0");
+        }
+    }
+});
+
+//#endregion
