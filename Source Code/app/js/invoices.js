@@ -78,19 +78,11 @@ function LoadInvoices(frmDate, toDate) {
 function FillDataTable(jsonData) {
     var table = $("#" + 'carcassTable');
     var tbody = table.find('tbody');
-
-    // Clear the existing data in tbody
     tbody.empty();
-
-    // Create an array to hold all rows of table
     var rows = [];
-
-    // Initialize or reinitialize DataTable
     if ($.fn.DataTable.isDataTable(table)) {
-        table.DataTable().clear().destroy(); // Destroy the previous instance
-    }
-
-    // Loop through the data and create table rows
+        table.DataTable().clear().destroy();
+    };
     jsonData.forEach(function (data, index) {
         var row = $('<tr/>');
         var status = data['TrxStatus'].trim();
@@ -108,14 +100,10 @@ function FillDataTable(jsonData) {
         row.append('<td style="text-align: center; color:' + color + ';" title="' + status + '">' + icon + '</td>');
         row.append('<td>' + data['Document No.'].trim() + '</td>'); //Invoice No or "invoiceRefNo"
         row.append('<td>Sale Invoice</td>');   //Invoice Type
-
-        // row.append('<td>' + data['Item Number'].trim() + '</td>');  //Item No or "sroItemSerialNo"
         const sroItemSerialNoCellID = "sroItemSchNo-" + index;
-        // row.append('<td id="' + sroItemSerialNoCellID + '"></td>');  //Item No or "sroItemSerialNo"
         row.append('<td>' + data['Item Number'].trim() + '</td>');   //Zultec Item No
         row.append('<td id="' + sroItemSerialNoCellID + '"></td>');  //Item No or "sroItemSerialNo"
         row.append('<td>' + data['Item Description'].trim() + '</td>'); //Item Description or "productDescription"
-
 
         //#region Buyer Information
 
@@ -148,10 +136,6 @@ function FillDataTable(jsonData) {
         //#endregion
 
         row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
-
-        // row.append('<td>' + data['HS Code'].split("-")[0].trim() + '</td>'); //HS Code or "hsCode"
-
-        // if (data['HS Code'].trim() == "") {
         if ((data['HS Code'] ?? "").trim() === "") {
             row.append('<td></td>'); //HS Code or "hsCode"
             row.append('<td></td>'); //HS Code or "hsCode"
@@ -166,7 +150,6 @@ function FillDataTable(jsonData) {
                 row.append('<td></td>'); //HS Code or "hsCode"    
             }
         }
-
         if (data['HS Code'] && data['HS Code'].trim() !== "") {
             const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
             row.append('<td id="' + uomCellID + '">Loading...</td>');
@@ -176,28 +159,18 @@ function FillDataTable(jsonData) {
             const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
             row.append('<td id="' + uomCellID + '"></td>');
         }
-
         row.append('<td>' + data['Category'] + '</td>')
-
         let scenarioOptions = scenariosList.map(s => {
             return `<option value="${s.ID}">${s.Value}</option>`;
         }).join('');
-
-        // Add dropdown to row
         row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
-
         const rateCellID = 'rate-' + index;
         row.append('<td id="' + rateCellID + '">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');
-
         row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
         row.append('<td>' + 0 + '</td>');   //Total or "totalValues"
-
-        //row.append('<td style="text-align: right;">' + (Number(data['Net Amount']) + Number(data['Tax Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
         const netAmountCellID = 'netAmount-' + index;
         row.append('<td id="' + netAmountCellID + '" style="text-align: right;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
-
         row.append('<td>0</td>'); //Fixed Notified Value Or Retail Price or "fixedNotifiedValueOrRetailPrice"
-
         const salesTaxCellID = 'salesTax-' + index;
         if (data['Tax Schedule ID'].split(" ")[1].includes("%")) {
             let value = data["Tax Schedule ID"].split(" ")[1]; // e.g., "18%"
@@ -212,24 +185,14 @@ function FillDataTable(jsonData) {
         else {
             row.append('<td style="text-align: right;">0</td>');  //Sales Tax Applicable or "salesTaxApplicable"
         }
-
-        // row.append('<td>' + 0 + '</td>');   //Sales Tax Applicable or "salesTaxApplicable"
         row.append('<td>' + 0 + '</td>');   //Sales Tax With Held At Source or "salesTaxWithheldAtSource"
         row.append('<td></td>');    //Extra Tax or "extraTax"
         row.append('<td>' + 0 + '</td>');   //Further Tax or "furtherTax"
-        // row.append('<td></td>');    //Sro ScheduleNo or "sroScheduleNo"
-
         const sroSchCellID = "sroSch-" + index;
         row.append('<td id="' + sroSchCellID + '"></td>');  //Item No or "sroItemSerialNo"
-
         row.append('<td>' + 0 + '</td>');   //FED Payable or "fedPayable"
         row.append('<td>' + 0 + '</td>');   //Discount or "discount"
-
-        // row.append('<td>' + data['Sales Type'].trim() + '</td>');   //Sales Type or "saleType"
-        // row.append('<td>' + $("#scenariosDD option:selected").text().split('-')[1] + '</td>');   //Sales Type or "saleType"
-
         row.append(createDropdownMenu(data)); // Dropdown menu
-
         rows.push(row);
     });
 
@@ -238,9 +201,6 @@ function FillDataTable(jsonData) {
 
     $('#loaderRow').hide();
 
-    // table.DataTable({
-    //     "dom": '<"row justify-content-between top-information"lf>rt<"row justify-content-between bottom-information"ip><"clear">'
-    // });
     table.DataTable({
         "order": [[2, "asc"]],   // Sort by column index 2 (Document No)
         "dom": '<"row justify-content-between top-information"lf>rt<"row justify-content-between bottom-information"ip><"clear">'
@@ -249,7 +209,6 @@ function FillDataTable(jsonData) {
 
 // Function to create the dropdown menu
 function createDropdownMenu(data) {
-    // Create the dropdown menu with edit and delete options
     return $('<td style="text-align: center;">').append(
         $('<div/>', { 'class': 'dropdown' }).append(
             $('<button/>', {
@@ -284,38 +243,7 @@ function createDropdownMenu(data) {
 // Event delegation for dynamically created buttons
 $(document).on('click', '#validateBtn', function EditBtn() {
     return;
-    addEditBtnFlag = 1;
-    var ID = $(this).data('id');
-    var code = $(this).data('code');
-    var name = $(this).data('name');
-    var nameAr = $(this).data('namear');
-    var lineTypeID = $(this).data('line-type-id');
-    $('#carcassIDHiddenField').val(ID);
-    $('#animalCategoryDD').val(lineTypeID);
-    $('#code').val(code);
-    $('#name').val(name);
-    $('#nameAr').val(nameAr);
-    $('#btnSave').text('Update Changes');
-    $("#carcassModalTitleText").text('Edit Carcass Information');
-    $("#carcassModal").modal('show')
-});
-
-//#endregion
-
-//#region Modal Close Buttons
-
-$("#btnClose").click(function CloseModal() {
-    $('#animalCategoryDD').val(0);
-    $('#code').val('');
-    $('#name').val('');
-    $('#nameAr').val('');
-});
-
-$("#crossBtn").click(function CloseModal() {
-    $('#animalCategoryDD').val(0);
-    $('#code').val('');
-    $('#name').val('');
-    $('#nameAr').val('');
+    
 });
 
 //#endregion
@@ -352,7 +280,6 @@ $('#carcassTable').on('change', '#selectAll', function () {
 });
 
 $('#carcassTable').on('change', '.row-checkbox', function () {
-debugger
     var id = $(this).val();
     var $row = $(this).closest('tr');
 
@@ -377,10 +304,8 @@ debugger
     });
 
     if ($(this).is(':checked')) {
-
         // Validate HS Code on all rows with the same invoice number
         let invalidRow = null;
-
         matchingRows.each(function () {
             var hs = $(this).find('td').eq(hsCodeIndex).text().trim();
             if (!hs) {
@@ -403,42 +328,14 @@ debugger
                     html: 'HS Code is required for Invoice# <b>' + invoiceNo + '</b>.',
                 });
             }
-
-            // Uncheck ALL matching rows
             matchingRows.find('.row-checkbox').prop('checked', false);
             return;
         }
-
-        // Check all matching checkboxes
-        // matchingRows.find('.row-checkbox').each(function () {
-        //     var rowId = $(this).val();
-        //     $(this).prop('checked', true);
-
-        //     // Add ID
-        //     if (!selectedIds.includes(rowId)) {
-        //         selectedIds.push(rowId);
-        //     }
-
-        //     // Add row data
-        //     var rData = [];
-        //     $(this).closest('tr').find('td').each(function () {
-        //         rData.push($(this).text().trim());
-        //     });
-
-        //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
-        //     if (!exists) {
-        //         selectedRows.push(rData);
-                selectedRows.push(rowData);
-        //     }
-        // });
-
     } else {
         // Uncheck all rows with same invoice number
         matchingRows.find('.row-checkbox').each(function () {
             var rowId = $(this).val();
             $(this).prop('checked', false);
-
-            // Remove from selectedIds
             selectedIds = selectedIds.filter(id => id !== rowId);
 
             // Remove row-data
@@ -449,9 +346,7 @@ debugger
 
             selectedRows = selectedRows.filter(r => JSON.stringify(r) !== JSON.stringify(rData));
         });
-    }
-
-    // Update "select all" checkbox
+    };
     var total = $('.row-checkbox').length;
     var checked = $('.row-checkbox:checked').length;
     $('#selectAll').prop('checked', total === checked);
@@ -517,15 +412,12 @@ $("#tokenDD").change(function () {
                     $("#tokenValueInput").val("");
                 }
             });
-
         }
-
     }
     else {
         $("#tokenValue").val("");
         $("#tokenValueInput").val("");
     }
-
 });
 
 //#endregion
@@ -533,21 +425,18 @@ $("#tokenDD").change(function () {
 //#region "Search Btn click"
 
 $("#searchBtn").click(function () {
-
     var fromDateSelect = $("#fromDate").val();
     var toDateSelect = $("#toDate").val();
-
     if (fromDateSelect == "" || toDateSelect == "") {
         alert("Error: Invalid Date.");
         return;
     };
-
     if (toDateSelect < fromDateSelect) {
         alert("Error: To Date can't be less then From Date.");
         return;
     };
-
     LoadInvoices(fromDateSelect, toDateSelect);
+    $("#btnExport").css('display', 'block');
 });
 
 //#endregion
@@ -912,5 +801,50 @@ $(document).on('change', '.scenario-dropdown', function () {
         }
     }
 });
+
+//#endregion
+
+//#region "Export to Excel"
+
+$("#btnExport").on("click", function () {
+    exportLimitedColumns('carcassTable', [0,1,3,21,24,28,29,30,31,32,33,34], 'FBR_Invoices_Export.xlsx');   //TableName, Indexes which will remove, fileName
+});
+
+function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') {
+    var isDT = $.fn.DataTable && $.fn.DataTable.isDataTable('#' + tableId);
+    var hasRows = false;
+
+    if (isDT) {
+        var dt = $('#' + tableId).DataTable();
+        hasRows = dt.rows({ search: 'applied' }).count() > 0;
+    } else {
+        var table = document.getElementById(tableId);
+        hasRows = table && table.tBodies.length && table.tBodies[0].rows.length > 0;
+    }
+
+    if (!hasRows) {
+        alert("No data available to export.");
+        return;
+    }
+
+    // Clone the table
+    var originalTable = document.getElementById(tableId);
+    var clone = originalTable.cloneNode(true);
+    clone.querySelectorAll('input, select, textarea').forEach(el => el.remove());
+    clone.classList.remove('dataTable');
+    columnIndexes.sort((a, b) => b - a); // remove from rightmost first
+    clone.querySelectorAll('tr').forEach(row => {
+        columnIndexes.forEach(i => {
+            if (i < row.children.length) {  // make sure the index exists
+                row.removeChild(row.children[i]);
+            }
+        });
+    });
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.table_to_sheet(clone);
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, filename);
+}
+
 
 //#endregion

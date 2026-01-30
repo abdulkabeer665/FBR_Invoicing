@@ -15,16 +15,12 @@
       padding-left: 15px;
       padding-right: 10px;
       padding-bottom: 10px;
-    }
-
-    ;
+    };
 
     .modal-row {
       padding: 0 !important;
       /* Reset padding for the modal's row */
-    }
-
-    ;
+    };
 
     /* Ensures the button does not have an underline */
     #deleteBtn {
@@ -92,6 +88,9 @@
 
   <!-- Only use SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 
 </head>
 
@@ -227,14 +226,6 @@
                 </button>
               </div>
             </div>
-
-            <!-- <div class="row g-6" style="padding: 0px;"> -->
-              <!-- <div class="col mb-4" style="width: 32%;">
-                <label for="scenariosDD" class="form-label">Scenarios:<span style="color: red;">*</span></label>
-                <select name="scenariosDD" class="form-control" id="scenariosDD"></select>
-              </div> -->
-            <!-- </div> -->
-
             <!-- Bootstrap Table with Header - Footer -->
             <div class="card">
               <!-- <h5 class="card-header">Table Header & Footer</h5> -->
@@ -244,6 +235,9 @@
                   <button type="button" class="btn btn-primary" id="pushToFBRBtn">
                     Push to FBR <i class="bx bx-export me-1" style="margin-left: 3px; font-size: 18px;"></i>
                   </button>
+                  <button class="btn" style="display: none !important; background-color: green; color: white;" type="button" id="btnExport">
+                    Export to Excel <i class="bx bx-table me-1" style="margin-left: 3px; font-size: 18px;"></i>
+                  </button>
                 </div>
                 <table class="table table-hover" id="carcassTable">
                   <thead class="table-light">
@@ -252,36 +246,29 @@
                       <th>Status</th>
                       <th>Invoice No</th>
                       <th>Invoice Type</th>
-
                       <th>Item No</th>
                       <th>FBR Item No</th>
                       <th>Item Description</th>
-
                       <th>Customer NTN#</th>
                       <th>Name of Customer</th>
                       <th>Province</th>
                       <th>Location/Station</th>
                       <th>Buyer Registration Type</th>
-
                       <th>Seller NTN CNIC</th>
                       <th>Seller Business Name</th>
                       <th>Seller Province</th>
                       <th>Seller Address</th>
-                      
                       <th>Invoice Date</th>
                       <th>HS Code</th>
                       <th>HS Code Desc</th>
                       <th>Unit of Measure.</th>
                       <th>Category</th>
                       <th>IRIS Senario ID</th>
-
                       <th>Rate</th>
                       <th>Production Qty</th>
                       <th>Total</th>
                       <th>Sales Amount</th>
-
                       <th>Fixed Notified Value Or Retail Price</th>
-
                       <th>Sales Tax Applicable</th>
                       <th>Sales Tax With Held At Source</th>
                       <th>Extra Tax</th>
@@ -289,9 +276,6 @@
                       <th>Sro ScheduleNo</th>
                       <th>FED Payable</th>
                       <th>Discount</th>
-                      <!-- <th>Sales Type</th> -->
-
-                      <!-- <th>Test</th> -->
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -345,16 +329,6 @@
                           <input type="password" name="tokenValue" id="tokenValue" class="form-control" disabled/>
                         </div>
                       </div>
-                      <!-- <div class="row" style="padding: 0px;">
-                        <div class="col mb-0">
-                          <label for="nameAr" class="form-label">Name (Other):</label>
-                          <input 
-                            type="text" 
-                            id="nameAr" 
-                            class="form-control" 
-                            placeholder="Enter Name (Other)"/>
-                        </div>
-                      </div> -->
                       <!-- Loader added below the input fields -->
                       <div id="loaderModal" class="text-center" style="display: none;">
                         <div class="spinner-border text-primary" role="status">
@@ -388,15 +362,6 @@
     <div class="layout-overlay layout-menu-toggle"></div>
   </div>
   <!-- / Layout wrapper -->
-
-  <!-- <div class="buy-now">
-    <a href="https://themeselection.com/item/sneat-dashboard-pro-bootstrap/" target="_blank"
-      class="btn btn-danger btn-buy-now">Upgrade to Pro</a>
-  </div> -->
-
-  <!-- Core JS -->
-  <!-- build:js assets/vendor/js/core.js -->
-
   <script src="../assets/vendor/libs/jquery/jquery.js"></script>
   <script src="../assets/vendor/libs/popper/popper.js"></script>
   <script src="../assets/vendor/js/bootstrap.js"></script>
