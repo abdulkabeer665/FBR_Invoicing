@@ -807,7 +807,26 @@ $(document).on('change', '.scenario-dropdown', function () {
 //#region "Export to Excel"
 
 $("#btnExport").on("click", function () {
-    exportLimitedColumns('carcassTable', [0,1,3,21,24,28,29,30,31,32,33,34], 'FBR_Invoices_Export.xlsx');   //TableName, Indexes which will remove, fileName
+    //exportLimitedColumns('carcassTable', [0,1,3,21,24,28,29,30,31,32,33,34], 'FBR_Invoices_Export.xlsx');   //TableName, Indexes which will remove, fileName
+    function getCurrentDateTime() {
+
+        const now = new Date();
+        const date = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const ampm = hours >= 12 ? "PM" : "AM";
+
+        hours = hours % 12 || 12; // convert 0 to 12
+        hours = String(hours).padStart(2, "0");
+
+        return `${date}_${hours}-${minutes}_${ampm}`;
+    };
+
+    const dateTime = getCurrentDateTime();
+    const fileName = `FBR_Invoices_Export_${dateTime}.xlsx`;
+
+    exportLimitedColumns('carcassTable', [0,1,3,21,24,28,29,30,31,32,33,34], fileName);
 });
 
 function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') {
