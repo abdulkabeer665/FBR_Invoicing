@@ -106,8 +106,8 @@ function FillDataTable(jsonData) {
         row.append('<td>' + data['Item Description'].trim() + '</td>'); //Item Description or "productDescription"
 
         //#region Buyer Information
-
-        row.append('<td>' + data['NTN#'].trim().split('-')[0] + '</td>'); //Customer NTN# or "buyerNTNCNIC"
+        const buyerNTN = data['NTN#'].trim().split('-')[0];
+        row.append('<td>' + buyerNTN + '</td>'); //Customer NTN# or "buyerNTNCNIC"
         row.append('<td>' + data['Customer Name'].trim() + '</td>');    //Name of Custom or "buyerBusinessName"
         if (data['Location'].trim() != 'Karachi') {
             row.append('<td>' + 'Punjab' + '</td>');    //Province or "buyerProvince"
@@ -117,7 +117,13 @@ function FillDataTable(jsonData) {
         }
         row.append('<td>' + data['Location'].trim() + '</td>'); //Location/Station or "buyerAddress"
 
-        row.append('<td>Registered</td>'); //Buyer Registration Type or "buyerRegistrationType"
+        // row.append('<td>Registered</td>'); //Buyer Registration Type or "buyerRegistrationType"
+        const registrationCellID = 'reg-' + index;
+        row.append('<td id="' + registrationCellID + '">Loading...</td>')
+        if (buyerNTN !== "") {
+            
+            fetchRegistrationTypefromAPI(buyerNTN, registrationCellID);
+        }
 
         //#endregion
 
@@ -136,29 +142,58 @@ function FillDataTable(jsonData) {
         //#endregion
 
         row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
-        if ((data['HS Code'] ?? "").trim() === "") {
-            row.append('<td></td>'); //HS Code or "hsCode"
-            row.append('<td></td>'); //HS Code or "hsCode"
-        }
-        else {
-            if (data['HS Code'].trim().includes("-")) {
-                row.append('<td>' + data['HS Code'].split("-")[0].trim() + '' + '</td>'); //HS Code or "hsCode"
-                row.append('<td>' + data['HS Code'].split("-")[1].trim() + '</td>'); //HS Code or "hsCode"    
+
+        //#region HS Code and Unit of measurement work        
+        
+        const hsCodeCellID = 'hsCode-' + index;
+        const uomCellID = 'uom-' + index;
+        let hsValue = (data['HS Code'] ?? "").trim();
+        let firstPart = ''; let secondPart = '';
+        if (hsValue !== "") {
+            if (hsValue.includes("-")) {
+                firstPart = hsValue.split("-")[0].trim();
+                secondPart = hsValue.split("-")[1].trim();
+            } else {
+                firstPart = hsValue;
+                secondPart = '';
             }
-            else {
-                row.append('<td>' + data['HS Code'].split(" ")[0].trim() + ':-' + '</td>'); //HS Code or "hsCode"
-                row.append('<td></td>'); //HS Code or "hsCode"    
-            }
         }
-        if (data['HS Code'] && data['HS Code'].trim() !== "") {
-            const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
-            row.append('<td id="' + uomCellID + '">Loading...</td>');
-            fetchUOMFromAPI(data['HS Code'].trim(), uomCellID);
+        // ✅ ALWAYS append 3 columns (same as before)
+        row.append('<td id="' + hsCodeCellID + '" class="editable-hs" style="cursor:pointer;">' + firstPart + '</td>');
+        row.append('<td>' + secondPart + '</td>');
+        row.append('<td id="' + uomCellID + '">Loading...</td>');
+        if (hsValue !== "") {
+            fetchUOMFromAPI(hsValue, uomCellID);
+        } else {
+            $('#' + uomCellID).html('');
         }
-        else {
-            const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
-            row.append('<td id="' + uomCellID + '"></td>');
-        }
+
+        // if ((data['HS Code'] ?? "").trim() === "") {
+        //     row.append('<td></td>'); //HS Code or "hsCode"
+        //     row.append('<td></td>'); //HS Code or "hsCode"
+        // }
+        // else {
+        //     if (data['HS Code'].trim().includes("-")) {
+        //         row.append('<td>' + data['HS Code'].split("-")[0].trim() + '' + '</td>'); //HS Code or "hsCode"
+        //         row.append('<td>' + data['HS Code'].split("-")[1].trim() + '</td>'); //HS Code or "hsCode"    
+        //     }
+        //     else {
+        //         row.append('<td>' + data['HS Code'].split(" ")[0].trim() + ':-' + '</td>'); //HS Code or "hsCode"
+        //         row.append('<td></td>'); //HS Code or "hsCode"    
+        //     }
+        // }
+        // if (data['HS Code'] && data['HS Code'].trim() !== "") {
+        //     const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
+        //     row.append('<td id="' + uomCellID + '">Loading...</td>');
+        //     fetchUOMFromAPI(data['HS Code'].trim(), uomCellID);
+        // }
+        // else {
+        //     const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
+        //     row.append('<td id="' + uomCellID + '"></td>');
+        // }
+
+        //#endregion
+
         row.append('<td>' + data['Category'] + '</td>')
         let scenarioOptions = scenariosList.map(s => {
             return `<option value="${s.ID}">${s.Value}</option>`;
@@ -166,21 +201,23 @@ function FillDataTable(jsonData) {
         row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
         const rateCellID = 'rate-' + index;
         row.append('<td id="' + rateCellID + '">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');
-        row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
+        // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
+        const qtyCellID = 'qty-' + index;
+        row.append('<td id="' + qtyCellID + '" class="editable-qty" style="text-align:right; cursor:pointer;">' + Number(data['Qty']).toLocaleString() + '</td>');
         row.append('<td>' + 0 + '</td>');   //Total or "totalValues"
         const netAmountCellID = 'netAmount-' + index;
-        row.append('<td id="' + netAmountCellID + '" style="text-align: right;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
+        //row.append('<td id="' + netAmountCellID + '" style="text-align: right;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
+        row.append('<td id="' + netAmountCellID + '" class="editable" style="text-align: right; cursor:pointer;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');
         row.append('<td>0</td>'); //Fixed Notified Value Or Retail Price or "fixedNotifiedValueOrRetailPrice"
         const salesTaxCellID = 'salesTax-' + index;
         if (data['Tax Schedule ID'].split(" ")[1].includes("%")) {
             let value = data["Tax Schedule ID"].split(" ")[1]; // e.g., "18%"
             let numberOnly = value.match(/\d+/)[0]; // "18"
             let taxRate = Number(numberOnly); // 18 as number
-
             let netAmount = Number(data["Net Amount"]); // e.g., 100
-
             let taxAmount = (netAmount * taxRate) / 100;
-            row.append('<td id="' + salesTaxCellID + '" style="text-align: right;">' + Number(taxAmount).toLocaleString() + '</td>');  //Sales Tax Applicable or "salesTaxApplicable"
+            //row.append('<td id="' + salesTaxCellID + '" style="text-align: right;">' + Number(taxAmount).toLocaleString() + '</td>');  //Sales Tax Applicable or "salesTaxApplicable"
+            row.append('<td id="' + salesTaxCellID + '" class="editable-tax" style="text-align: right; cursor:pointer;">' + Number(taxAmount).toLocaleString() + '</td>');
         }
         else {
             row.append('<td style="text-align: right;">0</td>');  //Sales Tax Applicable or "salesTaxApplicable"
@@ -205,7 +242,202 @@ function FillDataTable(jsonData) {
         "order": [[2, "asc"]],   // Sort by column index 2 (Document No)
         "dom": '<"row justify-content-between top-information"lf>rt<"row justify-content-between bottom-information"ip><"clear">'
     });
+
+    var dt = table.DataTable();
+
+    //#region Net Amount input field section
+    $('#carcassTable tbody').off('click', 'td.editable'); // prevent duplicate binding
+
+    $('#carcassTable tbody').on('click', 'td.editable', function () {
+
+        var cell = dt.cell(this);
+        var originalValue = cell.data().toString().replace(/,/g, '');
+        var $td = $(this);
+
+        // Prevent multiple inputs
+        if ($td.find('input').length > 0) return;
+
+        var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
+
+        $td.html(input);
+        input.focus().select();
+
+        // Save on Enter or Blur
+        input.on('blur keydown', function (e) {
+
+            if (e.type === 'blur' || e.key === 'Enter') {
+
+                var newValue = $(this).val().replace(/,/g, '');
+
+                if (isNaN(newValue) || newValue === '') {
+                    newValue = originalValue;
+                }
+
+                var formatted = Number(newValue).toLocaleString();
+
+                cell.data(formatted).draw(false);
+
+                // 🔥 Recalculate Sales Tax automatically
+                var rowIndex = dt.row($td.closest('tr')).index();
+                recalculateTax(rowIndex, Number(newValue));
+            }
+
+            if (e.key === 'Escape') {
+                cell.data(Number(originalValue).toLocaleString()).draw(false);
+            }
+        });
+
+    });
+
+    //#endregion
+
+    //#region Sales Tax Applicable input field section
+
+    $('#carcassTable tbody').off('click', 'td.editable-tax');
+
+    $('#carcassTable tbody').on('click', 'td.editable-tax', function () {
+        var cell = dt.cell(this);
+        var originalValue = cell.data().toString().replace(/,/g, '');
+        var $td = $(this);
+
+        if ($td.find('input').length > 0) return;
+
+        var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
+
+        $td.html(input);
+        input.focus().select();
+
+        input.on('blur keydown', function (e) {
+            if (e.type === 'blur' || e.key === 'Enter') {
+
+                var newValue = $(this).val().replace(/,/g, '');
+
+                if (isNaN(newValue) || newValue === '') {
+                    newValue = originalValue;
+                }
+
+                var formatted = Number(newValue).toLocaleString();
+
+                cell.data(formatted).draw(false);
+            }
+
+            if (e.key === 'Escape') {
+                cell.data(Number(originalValue).toLocaleString()).draw(false);
+            }
+        });
+    });
+
+    //#endregion
+
+    //#region HS Code input field section
+
+    $('#carcassTable tbody').off('click', 'td.editable-hs');
+
+    $('#carcassTable tbody').on('click', 'td.editable-hs', function () {
+        debugger
+        var cell = dt.cell(this);
+        var originalValue = cell.data().toString().trim();
+        var $td = $(this);
+
+        if ($td.find('input').length > 0) return;
+
+        var input = $('<input type="text" class="form-control">').val(originalValue);
+
+        $td.html(input);
+        input.focus().select();
+
+        input.on('blur keydown', function (e) {
+
+            if (e.type === 'blur' || e.key === 'Enter') {
+
+                var newValue = $(this).val().trim();
+                if (newValue === '') newValue = originalValue;
+
+                cell.data(newValue).draw(false);
+
+                // 🔥 Get correct row index safely
+                var rowIndex = dt.row($td.closest('tr')).index();
+                var uomCellID = 'uom-' + rowIndex;
+
+                $('#' + uomCellID).html("Loading...");
+
+                fetchUOMFromAPI(newValue, uomCellID);
+            }
+
+            if (e.key === 'Escape') {
+                cell.data(originalValue).draw(false);
+            }
+        });
+    });
+
+    //#endregion
+
+    //#region Production Qty input field section
+
+    $('#carcassTable tbody').off('click', 'td.editable-qty');
+
+    $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
+
+        var cell = dt.cell(this);
+        var originalValue = cell.data().toString().replace(/,/g, '');
+        var $td = $(this);
+
+        if ($td.find('input').length > 0) return;
+
+        var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
+
+        $td.html(input);
+        input.focus().select();
+
+        input.on('blur keydown', function (e) {
+
+            if (e.type === 'blur' || e.key === 'Enter') {
+
+                var newValue = $(this).val().replace(/,/g, '');
+
+                if (isNaN(newValue) || newValue === '') {
+                    newValue = originalValue;
+                }
+
+                var formatted = Number(newValue).toLocaleString();
+
+                cell.data(formatted).draw(false);
+
+                // 🔥 OPTIONAL: If you want recalculation
+                var rowIndex = dt.row($td.closest('tr')).index();
+                recalculateRow(rowIndex); // Create this if needed
+            }
+
+            if (e.key === 'Escape') {
+                cell.data(Number(originalValue).toLocaleString()).draw(false);
+            }
+        });
+
+    });
+
+    //#endregion
+
 };
+
+//#region Recalculate Tax Value
+
+function recalculateTax(rowIndex, netAmount) {
+
+    var dt = $('#carcassTable').DataTable();
+    var rowNode = dt.row(rowIndex).node();
+
+    var rateText = $(rowNode).find('td[id^="rate-"]').text();
+
+    if (rateText.includes('%')) {
+        var rate = parseFloat(rateText.replace('%', ''));
+        var taxAmount = (netAmount * rate) / 100;
+
+        $(rowNode).find('td[id^="salesTax-"]')
+            .text(Number(taxAmount).toLocaleString());
+    }
+};
+
+//#endregion
 
 // Function to create the dropdown menu
 function createDropdownMenu(data) {
@@ -302,7 +534,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     var matchingRows = $('#carcassTable tbody tr').filter(function () {
         return $(this).find('td').eq(invoiceNoIndex).text().trim() === invoiceNo;
     });
-
+debugger
     if ($(this).is(':checked')) {
         // Validate HS Code on all rows with the same invoice number
         let invalidRow = null;
@@ -331,6 +563,28 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             matchingRows.find('.row-checkbox').prop('checked', false);
             return;
         }
+		// Check all matching checkboxes
+        // matchingRows.find('.row-checkbox').each(function () {
+        //     var rowId = $(this).val();
+        //     $(this).prop('checked', true);
+
+        //     // Add ID
+        //     if (!selectedIds.includes(rowId)) {
+        //         selectedIds.push(rowId);
+        //     }
+
+        //     // Add row data
+        //     var rData = [];
+        //     $(this).closest('tr').find('td').each(function () {
+        //         rData.push($(this).text().trim());
+        //     });
+
+        //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
+        //     if (!exists) {
+        //         selectedRows.push(rData);
+                selectedRows.push(rowData);
+        //     }
+        // });
     } else {
         // Uncheck all rows with same invoice number
         matchingRows.find('.row-checkbox').each(function () {
@@ -437,6 +691,7 @@ $("#searchBtn").click(function () {
     };
     LoadInvoices(fromDateSelect, toDateSelect);
     $("#btnExport").css('display', 'block');
+    $("#pushToFBRBtn").css('display', 'block');
 });
 
 //#endregion
@@ -460,7 +715,6 @@ $("#pushToFBRBtn").click(function AddBtn() {
     let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
     const rawDataObjects = cleanedRows.map(valuesArr => {
         const obj = {};
-        debugger
         keys.forEach((key, idx) => {
             if (idx !== 2 && idx !== 16 && idx !== 18) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18
                 obj[key] = valuesArr[idx];
@@ -472,51 +726,49 @@ $("#pushToFBRBtn").click(function AddBtn() {
     const groupedByInvoice = {};
 
     rawDataObjects.forEach(item => {
-    const invoiceKey = item.invoiceRefNo;
-    if (!groupedByInvoice[invoiceKey]) {
-        groupedByInvoice[invoiceKey] = {
-            invoiceRefNo: item.invoiceRefNo,
-            invoiceType: item.invoiceType,
-            invoiceDate: item.invoiceDate,
-            sellerNTNCNIC: item.sellerNTNCNIC,
-            sellerBusinessName: item.sellerBusinessName,
-            sellerProvince: item.sellerProvince,
-            sellerAddress: item.sellerAddress,
-            buyerNTNCNIC: item.buyerNTNCNIC,
-            buyerBusinessName: item.buyerBusinessName,
-            buyerProvince: item.buyerProvince,
-            buyerAddress: item.buyerAddress,
-            buyerRegistrationType: item.buyerRegistrationType,
-            scenarioId: scenarioIDSelected,
-            items: []
-        };
-    }
+        const invoiceKey = item.invoiceRefNo;
+        if (!groupedByInvoice[invoiceKey]) {
+            groupedByInvoice[invoiceKey] = {
+                invoiceRefNo: item.invoiceRefNo,
+                invoiceType: item.invoiceType,
+                invoiceDate: item.invoiceDate,
+                sellerNTNCNIC: item.sellerNTNCNIC,
+                sellerBusinessName: item.sellerBusinessName,
+                sellerProvince: item.sellerProvince,
+                sellerAddress: item.sellerAddress,
+                buyerNTNCNIC: item.buyerNTNCNIC,
+                buyerBusinessName: item.buyerBusinessName,
+                buyerProvince: item.buyerProvince,
+                buyerAddress: item.buyerAddress,
+                buyerRegistrationType: item.buyerRegistrationType,
+                scenarioId: scenarioIDSelected,
+                items: []
+            };
+        }
 
-    groupedByInvoice[invoiceKey].items.push({
-        hsCode: item.hsCode.split("-")[0],
-        productDescription: item.productDescription,
-        rate: item.rate,
-        uoM: item.uoM,
-        quantity: Number(item.quantity),
-        totalValues: Number(item.totalValues.replace(/,/g, '')),
-        valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
-        fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
-        salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
-        salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
-        extraTax: item.extraTax,
-        furtherTax: Number(item.furtherTax),
-        sroScheduleNo: item.sroScheduleNo,
-        fedPayable: Number(item.fedPayable),
-        discount: Number(item.discount),
-        saleType: salesTypeSelectedArr[itemCounter], // assign the specific element
-        sroItemSerialNo: item.sroItemSerialNo
+        groupedByInvoice[invoiceKey].items.push({
+            hsCode: item.hsCode.split("-")[0],
+            productDescription: item.productDescription,
+            rate: item.rate,
+            uoM: item.uoM,
+            quantity: Number(item.quantity),
+            totalValues: Number(item.totalValues.replace(/,/g, '')),
+            valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
+            fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
+            salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
+            salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
+            extraTax: item.extraTax,
+            furtherTax: Number(item.furtherTax),
+            sroScheduleNo: item.sroScheduleNo,
+            fedPayable: Number(item.fedPayable),
+            discount: Number(item.discount),
+            saleType: salesTypeSelectedArr[itemCounter], // assign the specific element
+            sroItemSerialNo: item.sroItemSerialNo
+        });
+
+        itemCounter++; // increment counter for next item
     });
-
-    itemCounter++; // increment counter for next item
-});
-
-const finalPayload = Object.values(groupedByInvoice);
-    debugger
+    const finalPayload = Object.values(groupedByInvoice);
     const FBR_token = $("#tokenValueInput").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
@@ -548,7 +800,10 @@ const finalPayload = Object.values(groupedByInvoice);
                             },
                             data: JSON.stringify(finalPayload),
                             success: function (response) {
-                                if (response.validationResponse.status == "Invalid") {
+                                if (response.validationResponse.invoiceStatuses == null) {
+                                    alert(response.validationResponse.error)
+                                }
+                                else if (response.validationResponse.status == "Invalid") {
                                     alert(response.validationResponse.invoiceStatuses[0]['error'])
                                 }
                                 else {
@@ -653,6 +908,27 @@ function fetchUOMFromAPI(hsCode, targetCellId) {
         // const uom = response[0]["description"] || 'N/A';
         const uom = response?.[0]?.description ?? 'N/A';
         $('#' + targetCellId).text(uom);
+    });
+}
+
+//#endregion
+
+//#region "Get Registration Type Against NTN #"
+
+function fetchRegistrationTypefromAPI(ntn, targetCellId) {
+    var settings = {
+        "url":'https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type?Registration_No=' + ntn,
+        "method": "GET",
+        "timeout": 0,
+        "headers": {
+            "Authorization": 'Bearer 427664dd-1809-3280-9ed3-c704e823e557'
+            //   "Cookie": "JSESSIONID=HDCez6mog7ZHkUSj15spUh-g7TiCGto2IHkrziec.i01-irisdmz55; cookiesession1=678B28F2CB763E08E0DF447115BEDAFB"
+        },
+    };
+
+    $.ajax(settings).done(function (response) {
+        const registrationType = response?.REGISTRATION_TYPE ?? 'N/A';
+        $('#' + targetCellId).text(registrationType);
     });
 }
 
