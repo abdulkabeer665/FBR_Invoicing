@@ -474,7 +474,175 @@ function createDropdownMenu(data) {
 
 // Event delegation for dynamically created buttons
 $(document).on('click', '#validateBtn', function EditBtn() {
-    return;
+    if (selectedRows.length === 0) {
+        alert("Please select an invoice to push.");
+        return;
+    }
+    var keys = [
+        "invoiceRefNo", "invoiceType", "zultecItemNo", "sroItemSerialNo", "productDescription",
+        "buyerNTNCNIC", "buyerBusinessName", "buyerProvince", "buyerAddress", "buyerRegistrationType",
+        "sellerNTNCNIC", "sellerBusinessName", "sellerProvince", "sellerAddress",
+        "invoiceDate", "hsCode", "hsCodeDesc", "uoM", "category", "scenarioId", "rate", "quantity",
+        "totalValues", "valueSalesExcludingST", "fixedNotifiedValueOrRetailPrice",
+        "salesTaxApplicable", "salesTaxWithheldAtSource", "extraTax", "furtherTax",
+        "sroScheduleNo", "fedPayable", "discount", "saleType"
+    ];
+    let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
+    const rawDataObjects = cleanedRows.map(valuesArr => {
+        const obj = {};
+        keys.forEach((key, idx) => {
+            if (idx !== 2 && idx !== 16 && idx !== 18) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18
+                obj[key] = valuesArr[idx];
+            }
+        });
+        return obj;
+    });
+    
+    const groupedByInvoice = {};
+    const environmentText = $("#environment").text().trim();
+
+    rawDataObjects.forEach(item => {
+        const invoiceKey = item.invoiceRefNo;
+        if (!groupedByInvoice[invoiceKey]) {
+            groupedByInvoice[invoiceKey] = {
+                invoiceRefNo: item.invoiceRefNo,
+                invoiceType: item.invoiceType,
+                invoiceDate: item.invoiceDate,
+                sellerNTNCNIC: item.sellerNTNCNIC,
+                sellerBusinessName: item.sellerBusinessName,
+                sellerProvince: item.sellerProvince,
+                sellerAddress: item.sellerAddress,
+                buyerNTNCNIC: item.buyerNTNCNIC,
+                buyerBusinessName: item.buyerBusinessName,
+                buyerProvince: item.buyerProvince,
+                buyerAddress: item.buyerAddress,
+                buyerRegistrationType: item.buyerRegistrationType,
+                //scenarioId: scenarioIDSelected,
+                items: []
+            };
+            // ✅ Add scenarioId only in Sandbox
+            if (environmentText === "(Sandbox Environment)") {
+                groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
+            }
+        }
+
+        groupedByInvoice[invoiceKey].items.push({
+            hsCode: item.hsCode.split("-")[0],
+            productDescription: item.productDescription,
+            rate: item.rate,
+            uoM: item.uoM,
+            quantity: Number(item.quantity),
+            totalValues: Number(item.totalValues.replace(/,/g, '')),
+            valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
+            fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
+            salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
+            salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
+            extraTax: item.extraTax,
+            furtherTax: Number(item.furtherTax),
+            sroScheduleNo: item.sroScheduleNo,
+            fedPayable: Number(item.fedPayable),
+            discount: Number(item.discount),
+            saleType: salesTypeSelectedArr[itemCounter], // assign the specific element
+            sroItemSerialNo: item.sroItemSerialNo
+        });
+
+        itemCounter++; // increment counter for next item
+    });
+
+    const finalPayload = Object.values(groupedByInvoice);
+
+    const FBR_token = $("#tokenValueInput").val();
+
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+        $("#tokenValue").val("");
+    } else {
+        var api_url = baseURLValue + 'getTokenCallDecrypted';
+        $("#tokenValue").val("");
+        const tokenObj = {
+            decTokenKey: FBR_token
+        };
+        makeApiCall({
+            url: api_url,
+            method: 'POST',
+            token: token,
+            data: tokenObj,
+            successCallback: function (result) {
+                const fbrAPIToken = result.token;
+                if (!localStorage.getItem('token')) {
+                    window.location.href = baseURLValue;
+                } else {                    
+                    finalPayload.forEach((finalPayload, index) => {
+                        $.ajax({
+                            url: 'https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            headers: {
+                                'Authorization': 'Bearer ' + fbrAPIToken.trim()
+                            },
+                            data: JSON.stringify(finalPayload),
+                            success: function (response) {
+                                
+                                if (response.validationResponse.invoiceStatuses == null) {
+                                    alert(response.validationResponse.error)
+                                }
+                                else if (response.validationResponse.status == "Invalid") {
+                                    alert('Failed to validate Invoice# ' + finalPayload.invoiceRefNo + '. The error is "' + response.validationResponse.invoiceStatuses[0]["error"] + '"')
+                                }
+                                else {  //Valid case
+                                    if (!localStorage.getItem('token')) {
+                                        window.location.href = baseURLValue;
+                                    } else {
+                                        alert("Invoice# " + finalPayload.invoiceRefNo + " validated successfully.");
+                                        //var totalRows = response.validationResponse.invoiceStatuses.length;
+
+                                        // for (let i = 0; i < response.validationResponse.invoiceStatuses.length; i++) {
+                                        //     const obj = {
+                                        //         Sopnumbr: finalPayload.invoiceRefNo,
+                                        //         FBR_InvoiceNo: response.validationResponse.invoiceStatuses[i]['invoiceNo'],
+                                        //         Dated: response.dated,
+                                        //         Status: response.validationResponse.invoiceStatuses[i]['status'],
+                                        //         StatusCode: response.validationResponse.invoiceStatuses[i]['statusCode'],
+                                        //         ScenarioID: scenarioIDSelected,
+                                        //         ScenarioDesc: salesTypeSelected
+                                        //     };
+                                        //     var api_url = baseURLValue + 'InsertFBR_Response';
+                                        //     makeApiCall({
+                                        //         url: api_url,
+                                        //         method: 'POST',
+                                        //         token: token,
+                                        //         data: obj, // You can pass any data you want to send
+                                        //         successCallback: function (result) {
+                                        //             if ((i + 1) == totalRows) {
+                                        //                 alert("Success: " + result.actualData[0]["Message"]);
+                                        //                 window.location.href = baseURLValue + 'invoices';
+                                        //             }
+                                        //         },
+                                        //         errorCallback: function (xhr, status, error) {
+                                        //             alert("Bad Request: " + xhr.responseText)
+                                        //             console.error("Error:", error, xhr.responseText);
+                                        //         }
+                                        //     });
+                                        // };
+                                    }
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                debugger
+                                console.error(`Failed to validate invoice ${finalPayload.invoiceRefNo}`, error);
+                                alert(`Failed to validate invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                            }
+
+                        });
+                    });
+                }
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+                $("#tokenValue").val("");
+            }
+        });
+    };
     
 });
 
@@ -611,7 +779,7 @@ debugger
 
 //#region "Save Token in hidden field"
 
-$("#btnSave").click(function SaveEditButton() {
+$("#btnSave").click(function SaveEditButton() {debugger
     if ($("#tokenValue").val() == "") {
         alert("Please select an Environment.");
     }
@@ -703,7 +871,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
         alert("Please select an invoice to push.");
         return;
     }
-    const keys = [
+    var keys = [
         "invoiceRefNo", "invoiceType", "zultecItemNo", "sroItemSerialNo", "productDescription",
         "buyerNTNCNIC", "buyerBusinessName", "buyerProvince", "buyerAddress", "buyerRegistrationType",
         "sellerNTNCNIC", "sellerBusinessName", "sellerProvince", "sellerAddress",
@@ -725,6 +893,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
     
     const groupedByInvoice = {};
 
+    const environmentText = $("#environment").text().trim();
+
     rawDataObjects.forEach(item => {
         const invoiceKey = item.invoiceRefNo;
         if (!groupedByInvoice[invoiceKey]) {
@@ -741,9 +911,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 buyerProvince: item.buyerProvince,
                 buyerAddress: item.buyerAddress,
                 buyerRegistrationType: item.buyerRegistrationType,
-                scenarioId: scenarioIDSelected,
+                //scenarioId: scenarioIDSelected,
                 items: []
             };
+            // ✅ Add scenarioId only in Sandbox
+            if (environmentText === "(Sandbox Environment)") {
+                groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
+            }
         }
 
         groupedByInvoice[invoiceKey].items.push({
@@ -768,6 +942,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
 
         itemCounter++; // increment counter for next item
     });
+
     const finalPayload = Object.values(groupedByInvoice);
     const FBR_token = $("#tokenValueInput").val();
     if (!localStorage.getItem('token')) {
@@ -1139,7 +1314,6 @@ function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') 
     var ws = XLSX.utils.table_to_sheet(clone);
     XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     XLSX.writeFile(wb, filename);
-}
-
+};
 
 //#endregion
