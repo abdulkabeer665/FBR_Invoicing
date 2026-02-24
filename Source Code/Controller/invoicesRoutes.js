@@ -7,6 +7,7 @@ var mssql = require('mssql');
 const router = express.Router();
 const { secretKey, verifyToken } = require('../GeneralFunctions/verifyToken');
 const { getDbConnection } = require('../dbUtils'); // Import the utility function
+const { writeInvoicePayloadToFile } = require('../fileWriter');
 
 
 const { getToken } = require('../tokenUtils'); // Import the utility function
@@ -190,6 +191,25 @@ router.post('/getTokenCallDecrypted', async (req, res) => {
         res.status(500).json({
             message: "Error connecting to the database.",
             error: err.message
+        });
+    }
+});
+
+//#endregion
+
+//#region "Save Invoice in a File"
+
+router.post('/save-invoice', async (req, res) => {
+    try {
+        const filePath = await writeInvoicePayloadToFile(req.body);
+        res.status(200).json({
+            message: 'Saved successfully',
+            file: filePath
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error saving file',
+            error: error.message
         });
     }
 });

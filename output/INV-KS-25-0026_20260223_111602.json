@@ -1,0 +1,38 @@
+[
+  {
+    "invoiceRefNo": "INV-KS-25-0026",
+    "invoiceType": "Sale Invoice",
+    "invoiceDate": "2025-09-01",
+    "sellerNTNCNIC": "1522054",
+    "sellerBusinessName": "",
+    "sellerProvince": "Punjab",
+    "sellerAddress": "Korangi",
+    "buyerNTNCNIC": "2635106",
+    "buyerBusinessName": "YKK PAKISTAN (PVT) LTD.",
+    "buyerProvince": "Punjab",
+    "buyerAddress": "",
+    "buyerRegistrationType": "Registered",
+    "items": [
+      {
+        "hsCode": "8443.3290",
+        "productDescription": "Kit, Toggle Bar, ZT420, ZT421",
+        "rate": "Exempt",
+        "uoM": "Numbers, pieces, units",
+        "quantity": 10,
+        "totalValues": 0,
+        "valueSalesExcludingST": 905700,
+        "fixedNotifiedValueOrRetailPrice": 0,
+        "salesTaxApplicable": 0,
+        "salesTaxWithheldAtSource": 0,
+        "extraTax": "",
+        "furtherTax": 0,
+        "sroScheduleNo": "6th Schd Table I",
+        "fedPayable": 0,
+        "discount": 0,
+        "saleType": "Exempt goods",
+        "sroItemSerialNo": "166"
+      }
+    ],
+    "scenarioId": "SN006"
+  }
+]

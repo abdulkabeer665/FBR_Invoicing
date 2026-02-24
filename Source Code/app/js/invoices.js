@@ -402,7 +402,6 @@ function FillDataTable(jsonData) {
                 var formatted = Number(newValue).toLocaleString();
 
                 cell.data(formatted).draw(false);
-
                 // 🔥 OPTIONAL: If you want recalculation
                 var rowIndex = dt.row($td.closest('tr')).index();
                 recalculateRow(rowIndex); // Create this if needed
@@ -422,7 +421,7 @@ function FillDataTable(jsonData) {
 //#region Recalculate Tax Value
 
 function recalculateTax(rowIndex, netAmount) {
-
+debugger
     var dt = $('#carcassTable').DataTable();
     var rowNode = dt.row(rowIndex).node();
 
@@ -439,7 +438,55 @@ function recalculateTax(rowIndex, netAmount) {
 
 //#endregion
 
-// Function to create the dropdown menu
+//#region Recalculate Row Value
+
+function recalculateRow(rowIndex, netAmount) {
+debugger
+    var dt = $('#carcassTable').DataTable();
+    var rowNode = dt.row(rowIndex).node();
+
+    var rateText = $(rowNode).find('td[id^="rate-"]').text();
+
+    if (rateText.includes('%')) {
+        var rate = parseFloat(rateText.replace('%', ''));
+        var taxAmount = (netAmount * rate) / 100;
+
+        $(rowNode).find('td[id^="salesTax-"]')
+            .text(Number(taxAmount).toLocaleString());
+    }
+};
+
+//#endregion
+
+// // Function to create the dropdown menu
+// function createDropdownMenu(data) {
+//     return $('<td style="text-align: center;">').append(
+//         $('<div/>', { 'class': 'dropdown' }).append(
+//             $('<button/>', {
+//                 'type': 'button',
+//                 'class': 'btn p-0 dropdown-toggle hide-arrow',
+//                 'data-bs-toggle': 'dropdown'
+//             }).append(
+//                 $('<i/>', { 'class': 'bx bx-dots-vertical-rounded' })
+//             ),
+//             $('<div/>', { 'class': 'dropdown-menu' }).append(
+//                 $('<a/>', {
+//                     'class': 'dropdown-item',
+//                     'style': 'cursor: pointer',
+//                     'data-id': data['ID'],  // Store RoleID in a data attribute
+//                     'data-code': data['Code'],      // Store Code in a data attribute
+//                     'data-name': data['Name'], // Store Name
+//                     'data-nameAr': data['NameAr'], // Store NameAr
+//                     'data-line-type-id': data['LineTypeID'], // Store LineTypeID
+//                     'id': 'validateBtn'  // unique id for edit button
+//                 }).append(
+//                     ' Validate', $('<i/>', { 'class': 'bx bx-key me-1' })
+//                 ),
+//             )
+//         )
+//     );
+// };
+
 function createDropdownMenu(data) {
     return $('<td style="text-align: center;">').append(
         $('<div/>', { 'class': 'dropdown' }).append(
@@ -451,22 +498,87 @@ function createDropdownMenu(data) {
                 $('<i/>', { 'class': 'bx bx-dots-vertical-rounded' })
             ),
             $('<div/>', { 'class': 'dropdown-menu' }).append(
+
+                // Validate option
                 $('<a/>', {
                     'class': 'dropdown-item',
                     'style': 'cursor: pointer',
-                    'data-id': data['ID'],  // Store RoleID in a data attribute
-                    'data-code': data['Code'],      // Store Code in a data attribute
-                    'data-name': data['Name'], // Store Name
-                    'data-nameAr': data['NameAr'], // Store NameAr
-                    'data-line-type-id': data['LineTypeID'], // Store LineTypeID
+                    'data-id': data['ID'],
+                    'data-code': data['Code'],
+                    'data-name': data['Name'],
+                    'data-nameAr': data['NameAr'],
+                    'data-line-type-id': data['LineTypeID'],
                     'id': 'validateBtn'  // unique id for edit button
                 }).append(
-                    ' Validate', $('<i/>', { 'class': 'bx bx-key me-1' })
+                    $('<i/>', { 'class': 'bx bx-key me-1' }),
+                    ' Validate'
                 ),
+
+                // Second option (example: Print)
+                $('<a/>', {
+                    'class': 'dropdown-item',
+                    'style': 'cursor: pointer',
+                    // 'data-id': data['Document No.'].trim(),
+                    'data-id': '1522054DIZMCPBZ296340-1',
+                    'id': 'printBtn'  // unique id for edit button
+                }).append(
+                    $('<i/>', { 'class': 'bx bx-check me-1' }),
+                    ' Print QR Code'
+                )
+
             )
         )
     );
 };
+
+//#endregion
+
+//#region "Print Button"
+
+$(document).on('click', '#printBtn', function PrintQRCode() {debugger
+    const fbr_Invoice_No = $(this).data('id');
+    if (fbr_Invoice_No != "" || fbr_Invoice_No != undefined) {
+        alert("Print QR Code button clicked: " + fbr_Invoice_No);
+
+        // Create a temporary div (offscreen)
+        var tempDiv = document.createElement("div");
+
+        // Generate QR code version 2
+        var qrcode = new QRCode(tempDiv, {
+            text: fbr_Invoice_No,
+            width: 200,      // pixel size
+            height: 200,
+            correctLevel: QRCode.CorrectLevel.M, // error correction level (L, M, Q, H)
+            version: 2       // force QR code version 2
+            
+            //QRCode.CorrectLevel.L → Low (7%)
+            //QRCode.CorrectLevel.M → Medium (15%)
+            //QRCode.CorrectLevel.Q → Quartile (25%)
+            //QRCode.CorrectLevel.H → High (30%)
+
+        });
+
+        // Wait a tiny moment to ensure QR code is generated
+        setTimeout(function() {
+            // Get QR code <img> element
+            var qrImg = tempDiv.querySelector("img");
+            
+            // Open new window for printing
+            var printWindow = window.open('', '_blank');
+            // printWindow.document.write('<html><head><title>Print QR</title></head><body style="text-align:center;">');
+            printWindow.document.write('<html><head></head><body style="text-align:center;">');
+            printWindow.document.write('<img src="' + qrImg.src + '" style="width:1in; height:1in;" />');
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }, 100); // small delay to ensure QR is rendered
+    }
+    else {
+        alert("FBR Invoice No not found.");
+    }
+});
 
 //#endregion
 
@@ -892,9 +1004,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
     });
     
     const groupedByInvoice = {};
-
     const environmentText = $("#environment").text().trim();
-
     rawDataObjects.forEach(item => {
         const invoiceKey = item.invoiceRefNo;
         if (!groupedByInvoice[invoiceKey]) {
@@ -944,6 +1054,27 @@ $("#pushToFBRBtn").click(function AddBtn() {
     });
 
     const finalPayload = Object.values(groupedByInvoice);
+
+    //#region "Write payload in a file"
+
+    var fileWriter_URL = baseURLValue + 'save-invoice';
+
+    makeApiCall({
+        url: fileWriter_URL,
+        method: 'POST',
+        token: token,
+        data: finalPayload, // You can pass any data you want to send
+        successCallback: function (result) {
+            console.log(result);
+        },
+        errorCallback: function (xhr, status, error) {
+            alert("Bad Request: " + xhr.responseText)
+            console.error("Error:", error, xhr.responseText);
+        }
+    });
+
+    //#endregion
+
     const FBR_token = $("#tokenValueInput").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
