@@ -514,18 +514,17 @@ function createDropdownMenu(data) {
                     ' Validate'
                 ),
 
-                // Second option (example: Print)
-                $('<a/>', {
-                    'class': 'dropdown-item',
-                    'style': 'cursor: pointer',
-                    // 'data-id': data['Document No.'].trim(),
-                    'data-id': '1522054DIZMCPBZ296340-1',
-                    'id': 'printBtn'  // unique id for edit button
-                }).append(
-                    $('<i/>', { 'class': 'bx bx-check me-1' }),
-                    ' Print QR Code'
-                )
-
+                // // Second option (example: Print)
+                // $('<a/>', {
+                //     'class': 'dropdown-item',
+                //     'style': 'cursor: pointer',
+                //     // 'data-id': data['Document No.'].trim(),
+                //     'data-id': '1522054DIZMCPBZ296340-1',
+                //     'id': 'printBtn'  // unique id for edit button
+                // }).append(
+                //     $('<i/>', { 'class': 'bx bx-check me-1' }),
+                //     ' Print QR Code'
+                // )
             )
         )
     );
@@ -535,15 +534,13 @@ function createDropdownMenu(data) {
 
 //#region "Print Button"
 
-$(document).on('click', '#printBtn', function PrintQRCode() {debugger
+$(document).on('click', '#printBtn', function PrintQRCode() {
     const fbr_Invoice_No = $(this).data('id');
-    if (fbr_Invoice_No != "" || fbr_Invoice_No != undefined) {
-        alert("Print QR Code button clicked: " + fbr_Invoice_No);
+    debugger
+    if (fbr_Invoice_No != "" && fbr_Invoice_No != undefined) {
 
-        // Create a temporary div (offscreen)
         var tempDiv = document.createElement("div");
 
-        // Generate QR code version 2
         var qrcode = new QRCode(tempDiv, {
             text: fbr_Invoice_No,
             width: 200,      // pixel size
@@ -558,25 +555,67 @@ $(document).on('click', '#printBtn', function PrintQRCode() {debugger
 
         });
 
-        // Wait a tiny moment to ensure QR code is generated
-        setTimeout(function() {
-            // Get QR code <img> element
+        setTimeout(function () {
+            debugger
             var qrImg = tempDiv.querySelector("img");
-            
-            // Open new window for printing
+            var imagePath = baseURLValue + "assets/img/icons/brands/fbrdigitalinvoicing.png"; 
             var printWindow = window.open('', '_blank');
-            // printWindow.document.write('<html><head><title>Print QR</title></head><body style="text-align:center;">');
-            printWindow.document.write('<html><head></head><body style="text-align:center;">');
-            printWindow.document.write('<img src="' + qrImg.src + '" style="width:1in; height:1in;" />');
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-            printWindow.close();
-        }, 100); // small delay to ensure QR is rendered
-    }
-    else {
-        alert("FBR Invoice No not found.");
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print</title>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding: 10px;
+                                font-family: Arial, sans-serif;
+                            }
+                            .container {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: flex-start; /* LEFT ALIGN */
+                            }
+                            .row {
+                                display: flex;
+                                gap: 10px;
+                                align-items: center;
+                            }
+                            .print-img {
+                                width: 1in;
+                                height: 1in;
+                            }
+                            .print-text {
+                                margin-top: 5px;
+                                font-size: 12px;
+                            }
+                            @media print {
+                                body {
+                                    margin: 0;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="row" style="margin-left: 18px;">
+                                <img src="${imagePath}" class="print-img" />
+                                <img src="${qrImg.src}" class="print-img" />
+                            </div>
+                            <div class="print-text">
+                                <strong>FBR Invoice # :</strong> ${fbr_Invoice_No}
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `);
+            debugger
+            // printWindow.document.close();
+            // printWindow.focus();
+            //printWindow.print();
+            // printWindow.close();
+        }, 100);
+    } else {
+        alert("FBR Invoice # not found.");
     }
 });
 
