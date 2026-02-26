@@ -334,7 +334,7 @@ function FillDataTable(jsonData) {
     $('#carcassTable tbody').off('click', 'td.editable-hs');
 
     $('#carcassTable tbody').on('click', 'td.editable-hs', function () {
-        debugger
+        
         var cell = dt.cell(this);
         var originalValue = cell.data().toString().trim();
         var $td = $(this);
@@ -421,7 +421,7 @@ function FillDataTable(jsonData) {
 //#region Recalculate Tax Value
 
 function recalculateTax(rowIndex, netAmount) {
-debugger
+
     var dt = $('#carcassTable').DataTable();
     var rowNode = dt.row(rowIndex).node();
 
@@ -441,7 +441,7 @@ debugger
 //#region Recalculate Row Value
 
 function recalculateRow(rowIndex, netAmount) {
-debugger
+
     var dt = $('#carcassTable').DataTable();
     var rowNode = dt.row(rowIndex).node();
 
@@ -457,35 +457,6 @@ debugger
 };
 
 //#endregion
-
-// // Function to create the dropdown menu
-// function createDropdownMenu(data) {
-//     return $('<td style="text-align: center;">').append(
-//         $('<div/>', { 'class': 'dropdown' }).append(
-//             $('<button/>', {
-//                 'type': 'button',
-//                 'class': 'btn p-0 dropdown-toggle hide-arrow',
-//                 'data-bs-toggle': 'dropdown'
-//             }).append(
-//                 $('<i/>', { 'class': 'bx bx-dots-vertical-rounded' })
-//             ),
-//             $('<div/>', { 'class': 'dropdown-menu' }).append(
-//                 $('<a/>', {
-//                     'class': 'dropdown-item',
-//                     'style': 'cursor: pointer',
-//                     'data-id': data['ID'],  // Store RoleID in a data attribute
-//                     'data-code': data['Code'],      // Store Code in a data attribute
-//                     'data-name': data['Name'], // Store Name
-//                     'data-nameAr': data['NameAr'], // Store NameAr
-//                     'data-line-type-id': data['LineTypeID'], // Store LineTypeID
-//                     'id': 'validateBtn'  // unique id for edit button
-//                 }).append(
-//                     ' Validate', $('<i/>', { 'class': 'bx bx-key me-1' })
-//                 ),
-//             )
-//         )
-//     );
-// };
 
 function createDropdownMenu(data) {
     return $('<td style="text-align: center;">').append(
@@ -779,7 +750,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
                                 }
                             },
                             error: function (xhr, status, error) {
-                                debugger
+                                
                                 console.error(`Failed to validate invoice ${finalPayload.invoiceRefNo}`, error);
                                 alert(`Failed to validate invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
                             }
@@ -853,7 +824,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     var matchingRows = $('#carcassTable tbody tr').filter(function () {
         return $(this).find('td').eq(invoiceNoIndex).text().trim() === invoiceNo;
     });
-debugger
+
     if ($(this).is(':checked')) {
         // Validate HS Code on all rows with the same invoice number
         let invalidRow = null;
@@ -930,7 +901,7 @@ debugger
 
 //#region "Save Token in hidden field"
 
-$("#btnSave").click(function SaveEditButton() {debugger
+$("#btnSave").click(function SaveEditButton() {
     if ($("#tokenValue").val() == "") {
         alert("Please select an Environment.");
     }
@@ -1018,6 +989,7 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
+    var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
     if (selectedRows.length === 0) {
         alert("Please select an invoice to push.");
         return;
@@ -1066,6 +1038,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
             // ✅ Add scenarioId only in Sandbox
             if (environmentText === "(Sandbox Environment)") {
                 groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
+                invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb';
             }
         }
 
@@ -1131,13 +1104,15 @@ $("#pushToFBRBtn").click(function AddBtn() {
             data: tokenObj,
             successCallback: function (result) {
                 const fbrAPIToken = result.token;
-
+debugger
                 if (!localStorage.getItem('token')) {
                     window.location.href = baseURLValue;
                 } else {
                     finalPayload.forEach((finalPayload, index) => {
                         $.ajax({
-                            url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb',
+                            // url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb'    //Sandbox URL,
+                            //url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata',
+                            url: invoice_Push_URL,
                             method: 'POST',
                             contentType: 'application/json',
                             headers: {

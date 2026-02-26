@@ -1,0 +1,37 @@
+[
+  {
+    "invoiceRefNo": "INV-KS-25-0025",
+    "invoiceType": "Sale Invoice",
+    "invoiceDate": "2025-09-01",
+    "sellerNTNCNIC": "1522054",
+    "sellerBusinessName": "ZEBRA",
+    "sellerProvince": "Punjab",
+    "sellerAddress": "Korangi",
+    "buyerNTNCNIC": "0711734",
+    "buyerBusinessName": "P & G PAKISTAN (PVT) LTD",
+    "buyerProvince": "Punjab",
+    "buyerAddress": "",
+    "buyerRegistrationType": "Registered",
+    "items": [
+      {
+        "hsCode": "8443.9990",
+        "productDescription": "Kit, Power Supply, ZT400 Series",
+        "rate": "18%",
+        "uoM": "KG",
+        "quantity": 1,
+        "totalValues": 0,
+        "valueSalesExcludingST": 204600,
+        "fixedNotifiedValueOrRetailPrice": 0,
+        "salesTaxApplicable": 36828,
+        "salesTaxWithheldAtSource": 0,
+        "extraTax": "",
+        "furtherTax": 0,
+        "sroScheduleNo": "",
+        "fedPayable": 0,
+        "discount": 0,
+        "saleType": "Goods at standard rate (default)",
+        "sroItemSerialNo": ""
+      }
+    ]
+  }
+]
