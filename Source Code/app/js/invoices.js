@@ -194,11 +194,17 @@ function FillDataTable(jsonData) {
 
         //#endregion
 
-        row.append('<td>' + data['Category'] + '</td>')
+        row.append('<td>' + data['Category'] + '</td>');
+
+        //#region "Scenario Dropdown"
+
         let scenarioOptions = scenariosList.map(s => {
             return `<option value="${s.ID}">${s.Value}</option>`;
         }).join('');
         row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
+        
+        //#endregion
+
         const rateCellID = 'rate-' + index;
         row.append('<td id="' + rateCellID + '">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');
         // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
@@ -246,6 +252,7 @@ function FillDataTable(jsonData) {
     var dt = table.DataTable();
 
     //#region Net Amount input field section
+
     $('#carcassTable tbody').off('click', 'td.editable'); // prevent duplicate binding
 
     $('#carcassTable tbody').on('click', 'td.editable', function () {
@@ -377,7 +384,7 @@ function FillDataTable(jsonData) {
     $('#carcassTable tbody').off('click', 'td.editable-qty');
 
     $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
-
+debugger
         var cell = dt.cell(this);
         var originalValue = cell.data().toString().replace(/,/g, '');
         var $td = $(this);
@@ -447,16 +454,18 @@ function recalculateRow(rowIndex, netAmount) {
 
     var rateText = $(rowNode).find('td[id^="rate-"]').text();
 
-    if (rateText.includes('%')) {
-        var rate = parseFloat(rateText.replace('%', ''));
-        var taxAmount = (netAmount * rate) / 100;
+    // if (rateText.includes('%')) {
+    //     var rate = parseFloat(rateText.replace('%', ''));
+    //     var taxAmount = (netAmount * rate) / 100;
 
-        $(rowNode).find('td[id^="salesTax-"]')
-            .text(Number(taxAmount).toLocaleString());
-    }
+    //     $(rowNode).find('td[id^="salesTax-"]')
+    //         .text(Number(taxAmount).toLocaleString());
+    // }
 };
 
 //#endregion
+
+//#region "Create Dropdown Menu"
 
 function createDropdownMenu(data) {
     return $('<td style="text-align: center;">').append(
@@ -500,6 +509,8 @@ function createDropdownMenu(data) {
         )
     );
 };
+
+//#endregion
 
 //#endregion
 
@@ -1077,7 +1088,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
         token: token,
         data: finalPayload, // You can pass any data you want to send
         successCallback: function (result) {
-            console.log(result);
+            // console.log(result);
         },
         errorCallback: function (xhr, status, error) {
             alert("Bad Request: " + xhr.responseText)
@@ -1139,7 +1150,8 @@ debugger
                                                 Status: response.validationResponse.invoiceStatuses[i]['status'],
                                                 StatusCode: response.validationResponse.invoiceStatuses[i]['statusCode'],
                                                 ScenarioID: scenarioIDSelected,
-                                                ScenarioDesc: salesTypeSelected
+                                                ScenarioDesc: salesTypeSelected,
+                                                Environment: environmentText
                                             };
                                             var api_url = baseURLValue + 'InsertFBR_Response';
                                             makeApiCall({
@@ -1197,9 +1209,10 @@ function LoadScenarios() {
             data: {}, // You can pass any data you want to send
             successCallback: function (result) {
                 scenariosList = result.actualData || [];
-                // Add default "Select Scenario" option at the beginning
-                scenariosList.unshift({ ID: 0, Value: 'Select Scenario' });
-                FillDropDown('scenariosDD', 'Select Scenario', result.actualData)
+                // // Add default "Select Scenario" option at the beginning
+                // scenariosList.unshift({ ID: 0, Value: 'Select Scenario' });
+                // FillDropDown('scenariosDD', 'Select Scenario', result.actualData);
+                FillDropDown('scenariosDD', '', result.actualData);
             },
             errorCallback: function (xhr, status, error) {
                 console.error("Error:", error);
@@ -1285,7 +1298,7 @@ $(document).on('change', '.scenario-dropdown', function () {
 
     // You can store this in a variable, update UI, or make an API call, etc.
     if (scenarioIDSelected != "SN001") {
-
+debugger
         var settings = {
             "url": 'https://gw.fbr.gov.pk/pdi/v1/transtypecode',
             "method": "GET",
@@ -1348,7 +1361,7 @@ $(document).on('change', '.scenario-dropdown', function () {
                     },
                 };
                 $.ajax(settings).done(function (SroScheduleResponse) {
-
+debugger
                     sro_ID = Number(SroScheduleResponse[0]['srO_ID']);
                     sro_Desc = SroScheduleResponse[0]['srO_DESC'].trim();
                     $("#" + colSROSchID).text(sro_Desc);

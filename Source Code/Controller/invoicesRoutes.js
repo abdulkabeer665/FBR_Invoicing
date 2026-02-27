@@ -125,6 +125,7 @@ router.post('/InsertFBR_Response', verifyToken, async (req, res) => {
             mssql_request.input("StatusCode", req.body.StatusCode);
             mssql_request.input("ScenarioID", req.body.ScenarioID);
             mssql_request.input("ScenarioDesc", req.body.ScenarioDesc);
+            mssql_request.input("Environment", req.body.Environment);
             mssql_request.execute(SP_ZUL_Insert_FBR_Invoice_Response).then(function (dataset) {
                 if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
                     authData.iat = new Date(authData.iat * 1000).toLocaleString();
