@@ -1,6 +1,9 @@
 
 //#region "Declaration"
 
+const fs = require('fs');
+const path = require('path');
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 var mssql = require('mssql');
@@ -15,6 +18,7 @@ const { encryptData, decryptData } = require('../encryptDecrypt');
 
 const SP_Sales_Report = "[dbo].[sp_zul_Sales_Report]";
 const SP_GetScenarios = "[dbo].[SP_GetScenarios]";
+const SP_GetProvinces = "[dbo].[SP_GetProvinces]";
 const SP_ZUL_Insert_FBR_Invoice_Response = "[dbo].[sp_zul_Insert_FBR_Invoice_Response]";
 
 //#endregion
@@ -126,6 +130,31 @@ router.post('/InsertFBR_Response', verifyToken, async (req, res) => {
             mssql_request.input("ScenarioID", req.body.ScenarioID);
             mssql_request.input("ScenarioDesc", req.body.ScenarioDesc);
             mssql_request.input("Environment", req.body.Environment);
+
+            // ✅ -------- IMAGE HANDLING START --------
+            let imageBuffer = null;
+
+            if (req.body.QRImage) {
+                let base64Data = req.body.QRImage;
+            
+                // Remove prefix if exists (data:image/png;base64,...)
+                const matches = base64Data.match(/^data:image\/(png|jpeg|jpg);base64,(.+)$/);
+            
+                if (matches) {
+                    base64Data = matches[2];
+                }
+            
+                imageBuffer = Buffer.from(base64Data, 'base64');
+            
+                if (!imageBuffer || imageBuffer.length === 0) {
+                    return res.status(400).send("Invalid image data");
+                }
+            }
+        
+            // Pass to SQL (NULL if no image)
+            mssql_request.input("QRImage", mssql.VarBinary(mssql.MAX), imageBuffer);
+            // ✅ -------- IMAGE HANDLING END --------
+
             mssql_request.execute(SP_ZUL_Insert_FBR_Invoice_Response).then(function (dataset) {
                 if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
                     authData.iat = new Date(authData.iat * 1000).toLocaleString();
@@ -213,6 +242,85 @@ router.post('/save-invoice', async (req, res) => {
             error: error.message
         });
     }
+});
+
+//#endregion
+
+//#region "Save QR Code in folder"
+
+router.post('/save-qr', async (req, res) => {
+
+    const { invoiceNo, image} = req.body;
+    if (!image) {
+        return res.status(400).json({ message: "No image received" });
+    }
+
+    const base64Data = image.replace(/^data:image\/png;base64,/, "");
+
+    const dirPath = path.join(__dirname, "../qrCodes");
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    const fileName = `qr_${invoiceNo}.png`;
+    const filePath = path.join(dirPath, fileName);
+
+    fs.writeFile(filePath, base64Data, "base64", (err) => {
+
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Error saving QR" });
+        }
+
+        res.json({
+            message: "QR saved successfully",
+            file: `/qr/${fileName}`
+        });
+
+    });
+});
+
+//#endregion
+
+//#region "Get Provinces"
+
+router.get('/getProvinces', verifyToken, (req, res) => {
+    jwt.verify(req.token, secretKey, async (err, authData) => {
+        if (err) {
+            return res.status(400).send({
+                result: 'Invalid Token',
+            });
+        }
+
+        try {
+            // Use the generic function to get a connection to the transactionDb
+            const pool = await getDbConnection('loginDb');
+
+            const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
+            mssql_request.execute(SP_GetProvinces).then(function (dataset) {
+                if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
+                    authData.iat = new Date(authData.iat * 1000).toLocaleString();
+                    authData.exp = new Date(authData.exp * 1000).toLocaleString();
+                    res.status(200).send({
+                        actualData: dataset.recordset,
+                        authData,
+                    });
+                } else {
+                    res.status(404).send("No data found.");
+                }
+            }).catch(function (err) {
+                res.status(400).send("Error executing stored procedure: " + err.message);
+            });
+
+        } catch (err) {
+            res.status(500).send({
+                message: "Database connection failed",
+                error: err.message,
+            });
+        }
+     });
 });
 
 //#endregion

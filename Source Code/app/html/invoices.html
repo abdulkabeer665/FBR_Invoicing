@@ -44,22 +44,22 @@
   <meta name="description" content="" />
 
   <!-- Favicon -->
-  <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+  <link rel="icon" type="image/x-icon" href="../assets/img/favicon/zultec_favicon.ico" />
 
   <!-- Remixicons -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet" />
 
   <!-- jQuery Initializer -->
-  <!-- <script src="../assets/vendor/libs/jquery/jquery.js"></script> -->
-  <script src="https://code.jquery.com/jquery-3.6.1.js"></script>
+  <!-- jQuery first -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-  <!-- jQuery DataTable JS -->
-  <!-- <script src="https://cdn.datatables.net/2.2.2/js/dataTables.js"></script> -->
-  <script type="text/javascript" src=" https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js" defer></script>
+  <!-- DataTables CSS & JS (latest 1.13.x) -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-  <!-- jQuery DataTable CSS -->
-  <!-- <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.css" /> -->
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
+  <!-- FixedColumns CSS & JS (latest 4.3.x) -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+  <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -147,7 +147,8 @@
                 </g>
               </svg>
             </span>
-            <span class="app-brand-text demo menu-text fw-bold ms-2">sneat</span>
+            <span class="app-brand-text demo menu-text fw-bold ms-2">sneats</span>
+            <!-- <img src="../assets/img/icons/brands/Zultec_Logo.png" style="width: 200px;"/> -->
           </a>
 
           <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -231,7 +232,7 @@
               <div class="table-responsive text-nowrap">
                 <!-- Add button at the top -->
                 <div class="mb-3" style="float: right; padding-top: 10px; padding-right: 10px;">
-                  <button type="button" class="btn btn-primary" style="display: none !important;" id="pushToFBRBtn">
+                  <button type="button" class="btn btn-primary" style="margin-right: 20px; display: none !important;" id="pushToFBRBtn">
                     Push to FBR <i class="bx bx-export me-1" style="margin-left: 3px; font-size: 18px;"></i>
                   </button>
                   <button class="btn btn-success" style="display: none !important;" type="button" id="btnExport">
@@ -241,7 +242,7 @@
                 <table class="table table-hover" id="carcassTable">
                   <thead class="table-light">
                     <tr>
-                      <th><input type="checkbox" id="selectAll"></th> <!-- Master checkbox -->
+                      <th></th>
                       <th>Status</th>
                       <th>Invoice No</th>
                       <th>Invoice Type</th>
@@ -275,6 +276,7 @@
                       <th>Sro ScheduleNo</th>
                       <th>FED Payable</th>
                       <th>Discount</th>
+                      <th>FBR Invoice No</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -361,7 +363,7 @@
     <div class="layout-overlay layout-menu-toggle"></div>
   </div>
   <!-- / Layout wrapper -->
-  <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+  <!-- <script src="../assets/vendor/libs/jquery/jquery.js"></script> -->
   <script src="../assets/vendor/libs/popper/popper.js"></script>
   <script src="../assets/vendor/js/bootstrap.js"></script>
   <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
