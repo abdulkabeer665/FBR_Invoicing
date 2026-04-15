@@ -1215,10 +1215,11 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                     } else {
                                         let totalRows = response.validationResponse.invoiceStatuses.length;
 
-                                        for (let i = 0; i < totalRows; i++) {
+                                        // for (let i = 0; i < totalRows; i++) {
 
                                             let fbr_Invoice_No_QR = response.invoiceNumber;
-                                            let fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
+                                            let fbr_Invoice_No = response.invoiceNumber;
+                                            // let fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
                                             let qrBase64 = "";
                                         
                                             let tempDiv = document.createElement("div");
@@ -1251,8 +1252,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     Sopnumbr: finalPayload.invoiceRefNo,
                                                     FBR_InvoiceNo: fbr_Invoice_No,
                                                     Dated: response.dated,
-                                                    Status: response.validationResponse.invoiceStatuses[i]['status'],
-                                                    StatusCode: response.validationResponse.invoiceStatuses[i]['statusCode'],
+                                                    Status: response.validationResponse.invoiceStatuses[0]['status'],
+                                                    StatusCode: response.validationResponse.invoiceStatuses[0]['statusCode'],
                                                     ScenarioID: scenarioIDSelected,
                                                     ScenarioDesc: salesTypeSelected,
                                                     Environment: environmentText,
@@ -1267,10 +1268,10 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     token: token,
                                                     data: obj,
                                                     successCallback: function (result) {
-                                                        if ((i + 1) == totalRows) {
+                                                        // if ((i + 1) == totalRows) {
                                                             alert("Success: " + result.actualData[0]["Message"]);
                                                             window.location.href = baseURLValue + 'invoices';
-                                                        }
+                                                        // }
                                                     },
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
@@ -1279,7 +1280,11 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                 });
                                             
                                             }, 200);
-                                        }
+                                        // }
+
+
+
+
                                         // var totalRows = response.validationResponse.invoiceStatuses.length;
                                         // var qrBase64 = "";
                                         // for (let i = 0; i < response.validationResponse.invoiceStatuses.length; i++) {
