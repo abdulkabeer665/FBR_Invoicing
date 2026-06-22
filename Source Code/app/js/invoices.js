@@ -149,7 +149,15 @@ function FillDataTable(jsonData) {
         //#region Seller Information
 
         row.append('<td>1522054</td>');  //Seller NTNCNIC or "sellerNTNCNIC"
-        row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
+       // row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
+        
+        if (data['Manufacturer'].trim() == '') {
+            row.append('<td>' + 'ZULTEC' + '</td>');    //Province or "buyerProvince"
+        }
+        else {
+            row.append('<td>' + data['Manufacturer'].trim() + '</td>');    //Province or "buyerProvince"
+        }
+
         if (data['Location'].trim() != 'Karachi') {
             row.append('<td>' + 'Punjab' + '</td>');    //Province or "buyerProvince"
         }
@@ -171,6 +179,7 @@ function FillDataTable(jsonData) {
         const hsCodeCellID = 'hsCode-' + index;
         const uomCellID = 'uom-' + index;
         let hsValue = (data['HS Code'] ?? "").trim();
+        debugger
         let firstPart = ''; let secondPart = '';
         if (hsValue !== "") {
             if (hsValue.includes("-")) {
@@ -185,38 +194,15 @@ function FillDataTable(jsonData) {
         row.append('<td>' + secondPart + '</td>');
 
         row.attr('data-hs', hsValue);   //newly added        
-        row.append('<td class="uom-cell">Loading...</td>'); //newly added
-        const uomCell = row.find('.uom-cell');
+        row.append('<td id="' + uomCellID + '" class="uom-cell">Loading...</td>');
+        // const uomCell = row.find('.uom-cell');
         if (hsValue !== "") {
-            // fetchUOMFromAPI(hsValue, uomCellID);            
-            fetchUOMFromAPI(hsValue, uomCell);
+            fetchUOMFromAPI(hsValue, uomCellID);            
+            //fetchUOMFromAPI(hsValue, uomCell);
         } else {
             $('#' + uomCellID).html('');
         }
 
-        // if ((data['HS Code'] ?? "").trim() === "") {
-        //     row.append('<td></td>'); //HS Code or "hsCode"
-        //     row.append('<td></td>'); //HS Code or "hsCode"
-        // }
-        // else {
-        //     if (data['HS Code'].trim().includes("-")) {
-        //         row.append('<td>' + data['HS Code'].split("-")[0].trim() + '' + '</td>'); //HS Code or "hsCode"
-        //         row.append('<td>' + data['HS Code'].split("-")[1].trim() + '</td>'); //HS Code or "hsCode"    
-        //     }
-        //     else {
-        //         row.append('<td>' + data['HS Code'].split(" ")[0].trim() + ':-' + '</td>'); //HS Code or "hsCode"
-        //         row.append('<td></td>'); //HS Code or "hsCode"    
-        //     }
-        // }
-        // if (data['HS Code'] && data['HS Code'].trim() !== "") {
-        //     const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
-        //     row.append('<td id="' + uomCellID + '">Loading...</td>');
-        //     fetchUOMFromAPI(data['HS Code'].trim(), uomCellID);
-        // }
-        // else {
-        //     const uomCellID = 'uom-' + index; // Make a unique ID for each row's UOM cell
-        //     row.append('<td id="' + uomCellID + '"></td>');
-        // }
         //#endregion
         row.append('<td>' + data['Category'] + '</td>');
 
@@ -277,11 +263,11 @@ function FillDataTable(jsonData) {
             $('#carcassTable tbody tr').each(function () {
                 const $row = $(this);
                 const hsCode = $row.attr('data-hs');
-                const $uomCell = $row.find('.uom-cell');
+                // const $uomCell = $row.find('.uom-cell');
 
-                if (hsCode && $uomCell.text() === 'Loading...') {
-                    fetchUOMFromAPI(hsCode, $uomCell);
-                }
+                // if (hsCode && $uomCell.text() === 'Loading...') {
+                //     fetchUOMFromAPI(hsCode, $uomCell);
+                // }
             });
         }
     });    
@@ -726,7 +712,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
             productDescription: item.productDescription,
             rate: item.rate,
             uoM: item.uoM,
-            quantity: Number(item.quantity),
+            quantity: Number(item.quantity.replace(/,/g, '')),
             totalValues: Number(item.totalValues.replace(/,/g, '')),
             valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
             fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
@@ -1096,7 +1082,6 @@ $("#pushToFBRBtn").click(function AddBtn() {
         });
         return obj;
     });
-    
     const groupedByInvoice = {};
     const environmentText = $("#environment").text().trim();
     rawDataObjects.forEach(item => {
@@ -1125,13 +1110,12 @@ $("#pushToFBRBtn").click(function AddBtn() {
             }
             //groupedByInvoice[invoiceKey].sellerProvince = provinceSelected;
         }
-
         groupedByInvoice[invoiceKey].items.push({
             hsCode: item.hsCode.split("-")[0],
             productDescription: item.productDescription,
             rate: item.rate,
             uoM: item.uoM,
-            quantity: Number(item.quantity),
+            quantity: Number(item.quantity.replace(/,/g, '')),
             totalValues: Number(item.totalValues.replace(/,/g, '')),
             valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
             fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
@@ -1194,7 +1178,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                     finalPayload.forEach((finalPayload, index) => {
                         $.ajax({
                             // url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb'    //Sandbox URL,
-                            //url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata',
+                            //url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata',       //Production URL
                             url: invoice_Push_URL,
                             method: 'POST',
                             contentType: 'application/json',
@@ -1427,8 +1411,9 @@ function LoadProvinces() {
 
 //#region "Get UOM Against HS Code"
 
-// function fetchUOMFromAPI(hsCode, targetCellId) {
-function fetchUOMFromAPI(hsCode, $cell) {
+function fetchUOMFromAPI(hsCode, targetCellId) {
+//function fetchUOMFromAPI(hsCode, $cell) {
+    debugger
     const FBR_token = $("#tokenValueInput").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
@@ -1457,11 +1442,12 @@ function fetchUOMFromAPI(hsCode, $cell) {
                     },
                 };
 
-                $.ajax(settings).done(function (response) {
+                $.ajax(settings).done(function (response) {debugger
                     // const uom = response[0]["description"] || 'N/A';
                     const uom = response?.[0]?.description ?? 'N/A';
-                    // $('#' + targetCellId).text(uom);
-                    $cell.text(uom);    //newly added
+                    $('#' + targetCellId).text(uom);
+                    // $cell.text(uom);    //newly added
+                    // $($cell).text(uom);    //newly added
                 });
             },
             errorCallback: function (xhr, status, error) {
@@ -1509,7 +1495,8 @@ function fetchRegistrationTypefromAPI(ntn, $cell) {
                 $.ajax(settings).done(function (response) {
                     const registrationType = response?.REGISTRATION_TYPE ?? 'N/A';
                     // $('#' + targetCellId).text(registrationType);
-                    $cell.text(registrationType);
+                    // $cell.text(registrationType);
+                    $($cell).text(registrationType);    //newly added
                 });
             },
             errorCallback: function (xhr, status, error) {
@@ -1549,7 +1536,6 @@ function handleScenarioChange(dropdown, defaultValue = null) {
 
     const $sroSchCell = $row.find('td[id^="sroSch-"]');
     const colSROSchID = $sroSchCell.attr('id');
-
     // const selectedText = $(this).find('option:selected').text();
     let selectedText;
 
@@ -1692,11 +1678,11 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                         const result = Number(cleanedValue);
                         var res = (result * taxRate) / 100;
                         $("#" + colRateID).text(rate);
-                        // $("#" + colSalesTaxID).text(res);
+                        $("#" + colSalesTaxID).text(res);
                     }
                     else {
                         $("#" + colRateID).text(rate);
-                        // $("#" + colSalesTaxID).text("0");
+                        $("#" + colSalesTaxID).text("0");
                     }
                 }
             },
