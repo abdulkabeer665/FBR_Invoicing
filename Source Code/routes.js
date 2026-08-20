@@ -131,7 +131,7 @@ router.post('/login', async (req, res) => {
         mssql_request.input('LoginName', email);
         mssql_request.input('Pass', password);
 
-        mssql_request.execute('dbo.SP_UserLogin').then(function (dataset) {
+        mssql_request.execute('dbo.SP_UserLogin2').then(function (dataset) {
             if (dataset && dataset.recordset && dataset.recordset.length > 0) {
                 const user = dataset.recordset[0];
                 jwt.sign({ user }, secretKey, { expiresIn: '24h' }, (err, token) => {

@@ -16,7 +16,8 @@ const { writeInvoicePayloadToFile } = require('../fileWriter');
 const { getToken } = require('../tokenUtils'); // Import the utility function
 const { encryptData, decryptData } = require('../encryptDecrypt');
 
-const SP_Sales_Report = "[dbo].[sp_zul_Sales_Report]";
+//const SP_Sales_Report = "[dbo].[sp_zul_Sales_Report]";
+const SP_Sales_Report = "[dbo].[SP_GetDataOfInvoices]";
 const SP_GetScenarios = "[dbo].[SP_GetScenarios]";
 const SP_GetProvinces = "[dbo].[SP_GetProvinces]";
 const SP_ZUL_Insert_FBR_Invoice_Response = "[dbo].[sp_zul_Insert_FBR_Invoice_Response]";

@@ -95,6 +95,7 @@
 
 <body>
   <input type="hidden" id="tokenValueInput" />
+  <input type="hidden" id="tokenValueInputHdn" />
   <!-- Layout wrapper -->
   <div class="layout-wrapper layout-content-navbar">
     <div class="layout-container">
@@ -184,7 +185,7 @@
         <!-- Navbar -->
 
         <nav
-          class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+          class="layout-navbar navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
           id="layout-navbar">
           <div class="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 d-xl-none">
             <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
@@ -207,7 +208,7 @@
         <div class="content-wrapper">
           <!-- Content -->
 
-          <div class="container-xxl flex-grow-1 container-p-y">
+          <div class="flex-grow-1 container-p-y" style="padding-left: 1%; padding-right: 1%;">
 
             <div class="row g-6" style="padding: 0px;">
               <div class="col mb-4">
@@ -316,8 +317,18 @@
                     <div class="modal-body" style="margin-top: -20px;">
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
+                          <label for="authorityDD" class="form-label">Tax Authority:<span style="color: red;"> *</span></label>
+                          <select name="authorityDD" class="form-control" id="authorityDD">
+                            <option value="select">Select Tax Authority</option>
+                            <option value="FBR_"><b>FBR</b> - Federal Board of Revenue</option>
+                            <option value="PRA_"><b>PRA</b> - Punjab Revenue Authority</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
+                        <div class="col mb-6">
                           <label for="tokenDD" class="form-label">Environment:<span style="color: red;"> *</span></label>
-                          <select name="tokenDD" class="form-control" id="tokenDD">
+                          <select name="tokenDD" class="form-control" id="tokenDD" disabled>
                             <option value="select">Select Environment</option>
                             <option value="pushInvoiceToSandboxToken">Sandbox Environment</option>
                             <option value="pushInvoiceToProductionToken">Production Environment</option>

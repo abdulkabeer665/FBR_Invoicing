@@ -1,6 +1,6 @@
 
 $("#loginBtn").click(function (event) {
-
+    
     event.preventDefault(); // Prevent the form from submitting and the page from reloading
 
     if ($("#email").val() == "" || $("#password").val() == "") {    // Check if email or password fields are empty

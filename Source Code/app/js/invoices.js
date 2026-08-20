@@ -1,10 +1,12 @@
 //#region "Declaration"
+
 const baseURLValue = baseURL;
 var addEditBtnFlag = 0;
 var datatableReload = 0;
 const token = localStorage.getItem('token');
 var selectedIds = [];
 selectedRows = [];
+let PRA_selectedRows = [];
 let scenariosList = []; // Global variable to hold scenario data
 let provincesList = []; // Global variable to hold scenario data
 let scenarioIDSelected = "";
@@ -22,6 +24,7 @@ let sro_ID = 0;
 let sro_Desc = "";
 let sro_item_ID = 0;
 let sro_item_Desc = "";
+
 //#endregion
 
 //#region "Page Load"
@@ -40,10 +43,19 @@ $(document).ready(function () {
         $("#carcassModal").modal('show');
     }
     $("#tokenValueInput").val(localStorage.getItem('pushToken'));
+    $("#tokenValueInputHdn").val(localStorage.getItem('pushToken'));
 });
 
 $("#environment").click(function () {
     $("#carcassModal").modal('show');
+});
+
+//#endregion
+
+//#region "Tax Authority Selection"
+
+$("#authorityDD").change(function () {
+    document.querySelector("#tokenDD").disabled = false;
 });
 
 //#endregion
@@ -179,7 +191,6 @@ function FillDataTable(jsonData) {
         const hsCodeCellID = 'hsCode-' + index;
         const uomCellID = 'uom-' + index;
         let hsValue = (data['HS Code'] ?? "").trim();
-        debugger
         let firstPart = ''; let secondPart = '';
         if (hsValue !== "") {
             if (hsValue.includes("-")) {
@@ -214,7 +225,10 @@ function FillDataTable(jsonData) {
         //#endregion
 
         const rateCellID = 'rate-' + index;
-        row.append('<td id="' + rateCellID + '">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');
+
+        // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
+        
+        row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
         // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
         const qtyCellID = 'qty-' + index;
         row.append('<td id="' + qtyCellID + '" class="editable-qty" style="text-align:right; cursor:pointer;">' + Number(data['Qty']).toLocaleString() + '</td>');
@@ -263,11 +277,6 @@ function FillDataTable(jsonData) {
             $('#carcassTable tbody tr').each(function () {
                 const $row = $(this);
                 const hsCode = $row.attr('data-hs');
-                // const $uomCell = $row.find('.uom-cell');
-
-                // if (hsCode && $uomCell.text() === 'Loading...') {
-                //     fetchUOMFromAPI(hsCode, $uomCell);
-                // }
             });
         }
     });    
@@ -334,6 +343,7 @@ function FillDataTable(jsonData) {
     //#endregion
 
     //#region HS Code input field section
+
     $('#carcassTable tbody').off('click', 'td.editable-hs');
     $('#carcassTable tbody').on('click', 'td.editable-hs', function () {        
         var cell = dt.cell(this);
@@ -359,9 +369,11 @@ function FillDataTable(jsonData) {
             }
         });
     });
+
     //#endregion
 
     //#region Production Qty input field section
+    
     $('#carcassTable tbody').off('click', 'td.editable-qty');
     $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
         var cell = dt.cell(this);
@@ -377,7 +389,7 @@ function FillDataTable(jsonData) {
                 if (isNaN(newValue) || newValue === '') {
                     newValue = originalValue;
                 }
-                var formatted = Number(newValue).toLocaleString();
+                // var formatted = Number(newValue).toLocaleString();
                 cell.data(formatted).draw(false);
                 // 🔥 OPTIONAL: If you want recalculation
                 var rowIndex = dt.row($td.closest('tr')).index();
@@ -388,7 +400,96 @@ function FillDataTable(jsonData) {
             }
         });
     });
+
     //#endregion
+
+    //#region Rate input field section
+    
+    $('#carcassTable tbody').off('click', 'td.editable-qty');
+    $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
+        var cell = dt.cell(this);
+        var originalValue = cell.data().toString().replace(/,/g, '');
+        var $td = $(this);
+        if ($td.find('input').length > 0) return;
+        var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
+        $td.html(input);
+        input.focus().select();
+        var saved = false;
+        input.on('blur keydown', function (e) {
+            if (saved) return;
+            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Escape')
+                return;
+            saved = true;
+            if (e.key === 'Escape') {
+                cell.data(originalValue).draw(false);
+                return;
+            }
+            var newValue = $(this).val().replace(/,/g, '');
+            if (newValue === "")
+                newValue = originalValue;
+            cell.data(newValue).draw(false);
+            var row = dt.row($td.closest('tr'));
+            var rowData = row.data();
+            var netAmount = Number(rowData[25].replace(/,/g, ""));
+            var taxAmount = 0;
+            if (newValue.includes("%")) {
+                var taxRate = parseFloat(newValue);
+                taxAmount = (netAmount * taxRate) / 100;
+                // Round to 2 decimal places
+                taxAmount = Number(taxAmount.toFixed(2));
+                Number((netAmount * taxRate) / 100).toFixed(2);
+            }
+            $td.closest('tr').find('td[id^="salesTax-"]').text(taxAmount.toLocaleString());
+            recalculateRow(row.index());
+        
+        });
+    });
+    
+    //#endregion
+
+    // //#region SRO Schedule input field section
+    
+    // $('#carcassTable tbody').off('click', 'td.editable-qty');
+    // $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
+    //     var cell = dt.cell(this);
+    //     var originalValue = cell.data().toString().replace(/,/g, '');
+    //     var $td = $(this);
+    //     if ($td.find('input').length > 0) return;
+    //     var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
+    //     $td.html(input);
+    //     input.focus().select();
+    //     var saved = false;
+    //     input.on('blur keydown', function (e) {
+    //         if (saved) return;
+    //         if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Escape')
+    //             return;
+    //         saved = true;
+    //         if (e.key === 'Escape') {
+    //             cell.data(originalValue).draw(false);
+    //             return;
+    //         }
+    //         var newValue = $(this).val().replace(/,/g, '');
+    //         if (newValue === "")
+    //             newValue = originalValue;
+    //         cell.data(newValue).draw(false);
+    //         var row = dt.row($td.closest('tr'));
+    //         var rowData = row.data();
+    //         var netAmount = Number(rowData[25].replace(/,/g, ""));
+    //         var taxAmount = 0;
+    //         if (newValue.includes("%")) {
+    //             var taxRate = parseFloat(newValue);
+    //             taxAmount = (netAmount * taxRate) / 100;
+    //             // Round to 2 decimal places
+    //             taxAmount = Number(taxAmount.toFixed(2));
+    //             Number((netAmount * taxRate) / 100).toFixed(2);
+    //         }
+    //         $td.closest('tr').find('td[id^="salesTax-"]').text(taxAmount.toLocaleString());
+    //         recalculateRow(row.index());
+        
+    //     });
+    // });
+    
+    // //#endregion
 
 };
 
@@ -601,52 +702,6 @@ $(document).on('click', '#printBtn', function PrintQRCode() {
     }
 });
 
-// $(document).on('click', '#printBtn', function () {
-
-//     var api_url = baseURLValue + 'save-qr';
-//     var fbr_Invoice_No = $(this).data('id');
-//     var tempDiv = document.createElement("div");
-//     var qrcode = new QRCode(tempDiv, {
-//         text: fbr_Invoice_No,
-//         width: 200,
-//         height: 200,
-//         correctLevel: QRCode.CorrectLevel.M
-//     });
-//     setTimeout(function () {
-//         var qrBase64 = "";
-//         var img = tempDiv.querySelector("img");
-//         var canvas = tempDiv.querySelector("canvas");
-//         if (img) {
-//             qrBase64 = img.src;
-//         }
-//         else if (canvas) {
-//             qrBase64 = canvas.toDataURL("image/png");
-//         }
-//         if (!qrBase64) {
-//             console.error("QR generation failed");
-//             return;
-//         }
-//         makeApiCall({
-//             url: api_url,
-//             method: 'POST',
-//             token: token,
-//             data: {
-//                 image: qrBase64,
-//                 invoiceNo: fbr_Invoice_No
-//             },
-//             successCallback: function (result) {
-//                 console.log(result);
-//             },
-//             errorCallback: function (xhr, status, error) {
-//                 alert("Bad Request: " + xhr.responseText);
-//                 console.error("Error:", error, xhr.responseText);
-//             }
-//         });
-
-//     }, 200);
-
-// });
-
 //#endregion
 
 //#region Validate Buttons
@@ -701,7 +756,8 @@ $(document).on('click', '#validateBtn', function EditBtn() {
                 items: []
             };
             // ✅ Add scenarioId only in Sandbox
-            if (environmentText === "(Sandbox Environment)") {
+            // if (environmentText === "(Sandbox Environment)") {
+            if (environmentText === "(Sandbox Environment) - FBR") {
                 groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
             }
             //groupedByInvoice[invoiceKey].sellerProvince = provinceSelected;
@@ -709,7 +765,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
 
         groupedByInvoice[invoiceKey].items.push({
             hsCode: item.hsCode.split("-")[0],
-            productDescription: item.productDescription,
+            productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
             rate: item.rate,
             uoM: item.uoM,
             quantity: Number(item.quantity.replace(/,/g, '')),
@@ -861,7 +917,7 @@ $('#carcassTable').on('change', '#selectAll', function () {
 });
 
 $('#carcassTable').on('change', '.row-checkbox', function () {
-    
+    debugger;
     var id = $(this).val();
     var $row = $(this).closest('tr');
 
@@ -920,28 +976,74 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             matchingRows.find('.row-checkbox').prop('checked', false);
             return;
         }
-		// Check all matching checkboxes
-        // matchingRows.find('.row-checkbox').each(function () {
-        //     var rowId = $(this).val();
-        //     $(this).prop('checked', true);
+		// // Check all matching checkboxes
+        // // matchingRows.find('.row-checkbox').each(function () {
+        // //     var rowId = $(this).val();
+        // //     $(this).prop('checked', true);
 
-        //     // Add ID
-        //     if (!selectedIds.includes(rowId)) {
-        //         selectedIds.push(rowId);
-        //     }
+        // //     // Add ID
+        // //     if (!selectedIds.includes(rowId)) {
+        // //         selectedIds.push(rowId);
+        // //     }
 
-        //     // Add row data
-        //     var rData = [];
-        //     $(this).closest('tr').find('td').each(function () {
-        //         rData.push($(this).text().trim());
-        //     });
+        // //     // Add row data
+        // //     var rData = [];
+        // //     $(this).closest('tr').find('td').each(function () {
+        // //         rData.push($(this).text().trim());
+        // //     });
 
-        //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
-        //     if (!exists) {
-        //         selectedRows.push(rData);
-                selectedRows.push(rowData);
-        //     }
-        // });
+        // //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
+        // //     if (!exists) {
+        // //         selectedRows.push(rData);
+        //         selectedRows.push(rowData);
+        // //     }
+        // // });
+        if (rowData[22] == "16%") {
+            debugger
+            var saleValue = parseFloat(rowData[25].replace(/,/g, ""));
+            var taxCharged = parseFloat(rowData[27].replace(/,/g, ""));
+            // PRA_selectedRows.push(rowData);
+            PRA_selectedRows.push({
+            
+            //#region "Main Data"
+                POSID: 821732,      //Generated from PRA Registration Portal
+                USIN: rowData[2],   //Zultec Own Invoice No for Reference No
+                DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
+                BuyerPNTN: rowData[7],   //Buyer's NTN Registration No.
+                BuyerCNIC: "",           //Buyer's CNIC No.
+                BuyerName: rowData[8],    //Buyer's Name
+                BuyerPhoneNumber: "",     //Buyer's Phone No
+                TotalBillAmount: 0.0,
+                TotalQuantity: 0.0,
+                TotalSaleValue: 0.0,
+                TotalTaxCharged: 0.0,
+                Discount: 0.0,
+                FurtherTax: 0.0,
+                PaymentMode: 1,
+                RefUSIN: null,
+                InvoiceType: 1,
+            //#endregion
+
+            //#region "Item Data"
+                ItemCode: rowData[4],   //Zultec Item Code
+                ItemName: rowData[6],    //Zultec Item Name
+                Quantity: rowData[23],    //Quantity
+                PCTCode: rowData[17].replace(".", ""),  //HS-Code without DOT
+                TaxRate: rowData[22].replace("%", ""),  //Tax Rate without %
+                SaleValue: saleValue,
+                TotalAmount: saleValue + taxCharged,
+                TaxCharged: taxCharged,
+                Discount: 0.0,
+                FurtherTax: 0.0,
+                InvoiceType: 1,
+                RefUSIN: null
+            //#endregion
+            
+            });
+            console.log("PRA Selected Rows", PRA_selectedRows);
+        } else {
+            selectedRows.push(rowData);
+        }
     } else {
         // Uncheck all rows with same invoice number
         matchingRows.find('.row-checkbox').each(function () {
@@ -970,20 +1072,21 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
 $("#btnSave").click(function SaveEditButton() {
     if ($("#tokenValue").val() == "") {
         alert("Please select an Environment.");
+        return;
     }
     if ($("#tokenDD").val() == "pushInvoiceToSandboxToken") {
-        $("#environment").text("(Sandbox Environment)");
-        localStorage.setItem('environmentName', "(Sandbox Environment)");
+        $("#environment").text("(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
+        localStorage.setItem('environmentName', "(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
     }
     else if ($("#tokenDD").val() == "pushInvoiceToProductionToken") {
-        $("#environment").text("(Production Environment)");
-        localStorage.setItem('environmentName', "(Production Environment)");
+        $("#environment").text("(Production Environment - " + $("#authorityDD").val().replace("_", ""));
+        localStorage.setItem('environmentName', "(Production Environment) - " + $("#authorityDD").val().replace("_", ""));
     }
     else {
 
     }
     $("#tokenValueInput").val($("#tokenValue").val());
-    localStorage.setItem('pushToken', $("#tokenValue").val())
+    localStorage.setItem('pushToken', $("#tokenValueInputHdn").val());
     $("#carcassModal").modal('hide');
 
 });
@@ -993,7 +1096,8 @@ $("#btnSave").click(function SaveEditButton() {
 //#region "Fetch Token on Environment Selection"
 
 $("#tokenDD").change(function () {
-
+    var a = 0;
+    var b = 0
     if ($("#tokenDD").val() != "select") {
         if (!localStorage.getItem('token')) {
             window.location.href = baseURLValue;
@@ -1002,26 +1106,61 @@ $("#tokenDD").change(function () {
             var api_url = baseURLValue + 'getTokenCallEncrypted';
             $("#tokenValue").val("");
             $("#tokenValueInput").val("");
-
-            const tokenObj = {
-                tokenKey: $("#tokenDD").val()
-            };
-            makeApiCall({
-                url: api_url,
-                method: 'POST',
-                token: token,
-                data: tokenObj, // You can pass any data you want to send
-                successCallback: function (result) {
-
-                    $("#tokenValue").val(result.token);
-                    $("#tokenValueInput").val(result.token);
-                },
-                errorCallback: function (xhr, status, error) {
-                    console.error("Error:", error);
-                    $("#tokenValue").val("");
-                    $("#tokenValueInput").val("");
+            var tokenObj = {};
+            for (let i = 0; i < 2; i++) {
+                if (a == 0) {
+                    tokenObj = {
+                        tokenKey: $("#authorityDD").val() + $("#tokenDD").val()
+                    };
+                    a = 1;
+                } else {
+                    tokenObj = {
+                        tokenKey: "FBR_" + $("#tokenDD").val()
+                    };
                 }
-            });
+                
+                makeApiCall({
+                    url: api_url,
+                    method: 'POST',
+                    token: token,
+                    data: tokenObj, // You can pass any data you want to send
+                    successCallback: function (result) {
+                        if (b == 0) {
+                            $("#tokenValue").val(result.token);
+                            $("#tokenValueInput").val(result.token);
+                            b = 1;
+                        } else {
+                            $("#tokenValueInputHdn").val(result.token);
+                        }
+                        
+                    },
+                    errorCallback: function (xhr, status, error) {
+                        console.error("Error:", error);
+                        $("#tokenValue").val("");
+                        $("#tokenValueInput").val("");
+                    }
+                });
+            }
+            
+
+            // const tokenObj = {
+            //     tokenKey: $("#authorityDD").val() + $("#tokenDD").val()
+            // };
+            // makeApiCall({
+            //     url: api_url,
+            //     method: 'POST',
+            //     token: token,
+            //     data: tokenObj, // You can pass any data you want to send
+            //     successCallback: function (result) {
+            //         $("#tokenValue").val(result.token);
+            //         $("#tokenValueInput").val(result.token);
+            //     },
+            //     errorCallback: function (xhr, status, error) {
+            //         console.error("Error:", error);
+            //         $("#tokenValue").val("");
+            //         $("#tokenValueInput").val("");
+            //     }
+            // });
         }
     }
     else {
@@ -1055,7 +1194,110 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
-    
+    const environmentText = $("#environment").text().trim();
+    if (environmentText.includes("PRA")) {
+        debugger;
+        console.log(PRA_selectedRows);
+var totalQuantity = 0.0;
+var totalSaleValue = 0.0;
+var totalTaxCharged = 0.0;
+var discount = 0.0;
+var furtherTax = 0.0;
+var totalBillAmount = 0.0;
+        for (let index = 0; index < PRA_selectedRows.length; index++) {
+            totalQuantity += Number(PRA_selectedRows[index].Quantity);
+            totalSaleValue += Number(PRA_selectedRows[index].SaleValue);
+            totalTaxCharged += Number(PRA_selectedRows[index].TaxCharged);
+            discount += Number(PRA_selectedRows[index].Discount);
+            furtherTax += Number(PRA_selectedRows[index].FurtherTax);
+        };
+
+        totalBillAmount = totalSaleValue + totalTaxCharged;
+
+        const groupedByInvoice = {};
+        PRA_selectedRows.forEach(item => {
+            const invoiceKey = item.USIN;
+            if (!groupedByInvoice[invoiceKey]) {
+                groupedByInvoice[invoiceKey] = {
+                    InvoiceNumber: "",
+                    POSID: 821732,
+                    USIN: item.USIN,
+                    DateTime: item.DateTime,
+                    BuyerPNTN: item.BuyerPNTN,
+                    BuyerCNIC: item.BuyerCNIC,
+                    BuyerName: item.BuyerName,
+                    BuyerPhoneNumber: item.BuyerPhoneNumber,
+                    TotalBillAmount: totalBillAmount,
+                    TotalQuantity: totalQuantity,
+                    TotalSaleValue: totalSaleValue,
+                    TotalTaxCharged: totalTaxCharged,
+                    Discount: discount,
+                    FurtherTax: furtherTax,
+                    PaymentMode: item.PaymentMode,
+                    RefUSIN: item.RefUSIN,
+                    InvoiceType: item.InvoiceType,
+                    Items: []
+                };
+                
+            }
+            groupedByInvoice[invoiceKey].Items.push({
+                ItemCode: item.ItemCode,
+                ItemName: item.ItemName,
+                Quantity: item.Quantity,
+                PCTCode: item.PCTCode,
+                TaxRate: item.TaxRate,
+                SaleValue: item.SaleValue,
+                TotalAmount: item.TotalAmount,
+                TaxCharged: item.TaxCharged,
+                Discount: item.Discount,
+                FurtherTax: item.FurtherTax,
+                InvoiceType: item.InvoiceType,
+                RefUSIN: item.RefUSIN,
+
+                // hsCode: item.hsCode.split("-")[0],
+                // productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
+                // rate: item.rate,
+                // uoM: item.uoM,
+                // quantity: Number(item.quantity.replace(/,/g, '')),
+                // totalValues: Number(item.totalValues.replace(/,/g, '')),
+                // valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
+                // fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
+                // salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
+                // salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
+                // extraTax: item.extraTax,
+                // furtherTax: Number(item.furtherTax),
+                // sroScheduleNo: item.sroScheduleNo,
+                // fedPayable: Number(item.fedPayable),
+                // discount: Number(item.discount),
+                // saleType: salesTypeSelectedArr[0], // assign the specific element
+                // sroItemSerialNo: item.sroItemSerialNo
+            });
+        });
+
+        const PRA_finalPayload = Object.values(groupedByInvoice);
+
+        //#region "Write payload in a file"
+
+        var fileWriter_URL = baseURLValue + 'save-invoice';
+
+        makeApiCall({
+            url: fileWriter_URL,
+            method: 'POST',
+            token: token,
+            data: finalPayload, // You can pass any data you want to send
+            successCallback: function (result) {
+                // console.log(result);
+            },
+            errorCallback: function (xhr, status, error) {
+                alert("Bad Request: " + xhr.responseText)
+                console.error("Error:", error, xhr.responseText);
+            }
+        });
+
+        //#endregion
+
+        return;
+    }
     var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
     if (selectedRows.length === 0) {
         alert("Please select an invoice to push.");
@@ -1074,8 +1316,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
     let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
     const rawDataObjects = cleanedRows.map(valuesArr => {
         const obj = {};
-        keys.forEach((key, idx) => {
-            
+        keys.forEach((key, idx) => {            
             if (idx !== 2 && idx !== 16 && idx !== 18 && idx !== 33) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18, fbr_invoice_no = 33
                 obj[key] = valuesArr[idx];
             }
@@ -1083,7 +1324,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
         return obj;
     });
     const groupedByInvoice = {};
-    const environmentText = $("#environment").text().trim();
+    
     rawDataObjects.forEach(item => {
         const invoiceKey = item.invoiceRefNo;
         if (!groupedByInvoice[invoiceKey]) {
@@ -1104,7 +1345,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 items: []
             };
             // ✅ Add scenarioId only in Sandbox
-            if (environmentText === "(Sandbox Environment)") {
+            // if (environmentText === "(Sandbox Environment)") {
+            if (environmentText === "(Sandbox Environment) - FBR") {
                 groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
                 invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb';
             }
@@ -1112,7 +1354,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
         }
         groupedByInvoice[invoiceKey].items.push({
             hsCode: item.hsCode.split("-")[0],
-            productDescription: item.productDescription,
+            productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
             rate: item.rate,
             uoM: item.uoM,
             quantity: Number(item.quantity.replace(/,/g, '')),
@@ -1155,7 +1397,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
 
     //#endregion
 
-    const FBR_token = $("#tokenValueInput").val();
+    const FBR_token = $("#tokenValueInputHdn").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
         $("#tokenValue").val("");
@@ -1198,76 +1440,61 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                         window.location.href = baseURLValue;
                                     } else {
                                         let totalRows = response.validationResponse.invoiceStatuses.length;
-
-                                        // for (let i = 0; i < totalRows; i++) {
-
-                                            let fbr_Invoice_No_QR = response.invoiceNumber;
-                                            let fbr_Invoice_No = response.invoiceNumber;
-                                            // let fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
-                                            let qrBase64 = "";
+                                        let fbr_Invoice_No_QR = response.invoiceNumber;
+                                        let fbr_Invoice_No = response.invoiceNumber;
+                                        // let fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
+                                        let qrBase64 = "";
+                                        let tempDiv = document.createElement("div");
+                                        let qrcode = new QRCode(tempDiv, {
+                                            text: fbr_Invoice_No_QR,
+                                            width: 200,
+                                            height: 200,
+                                            correctLevel: QRCode.CorrectLevel.M,
+                                            version: 2
+                                        });
+                                        setTimeout(function () {
                                         
-                                            let tempDiv = document.createElement("div");
-                                        
-                                            let qrcode = new QRCode(tempDiv, {
-                                                text: fbr_Invoice_No_QR,
-                                                width: 200,
-                                                height: 200,
-                                                correctLevel: QRCode.CorrectLevel.M,
-                                                version: 2
-                                            });
-                                            
-                                            setTimeout(function () {
-                                            
-                                                let img = tempDiv.querySelector("img");
-                                                let canvas = tempDiv.querySelector("canvas");
-                                            
-                                                if (img) {
-                                                    qrBase64 = img.src;
-                                                } else if (canvas) {
-                                                    qrBase64 = canvas.toDataURL("image/png");
+                                            let img = tempDiv.querySelector("img");
+                                            let canvas = tempDiv.querySelector("canvas");                                        
+                                            if (img) {
+                                                qrBase64 = img.src;
+                                            } else if (canvas) {
+                                                qrBase64 = canvas.toDataURL("image/png");
+                                            }                                        
+                                            if (!qrBase64) {
+                                                console.error("QR generation failed");
+                                                return;
+                                            }                                        
+                                            const obj = {
+                                                Sopnumbr: finalPayload.invoiceRefNo,
+                                                FBR_InvoiceNo: fbr_Invoice_No,
+                                                Dated: response.dated,
+                                                Status: response.validationResponse.invoiceStatuses[0]['status'],
+                                                StatusCode: response.validationResponse.invoiceStatuses[0]['statusCode'],
+                                                ScenarioID: scenarioIDSelected,
+                                                ScenarioDesc: salesTypeSelected,
+                                                Environment: environmentText,
+                                                QRImage: qrBase64
+                                            };                                        
+                                            var api_url = baseURLValue + 'InsertFBR_Response';                                        
+                                            makeApiCall({
+                                                url: api_url,
+                                                method: 'POST',
+                                                token: token,
+                                                data: obj,
+                                                successCallback: function (result) {
+                                                    // if ((i + 1) == totalRows) {
+                                                        alert("Success: " + result.actualData[0]["Message"]);
+                                                        window.location.href = baseURLValue + 'invoices';
+                                                    // }
+                                                },
+                                                errorCallback: function (xhr, status, error) {
+                                                    alert("Bad Request: " + xhr.responseText)
+                                                    console.error("Error:", error, xhr.responseText);
                                                 }
-                                            
-                                                if (!qrBase64) {
-                                                    console.error("QR generation failed");
-                                                    return;
-                                                }
-                                            
-                                                const obj = {
-                                                    Sopnumbr: finalPayload.invoiceRefNo,
-                                                    FBR_InvoiceNo: fbr_Invoice_No,
-                                                    Dated: response.dated,
-                                                    Status: response.validationResponse.invoiceStatuses[0]['status'],
-                                                    StatusCode: response.validationResponse.invoiceStatuses[0]['statusCode'],
-                                                    ScenarioID: scenarioIDSelected,
-                                                    ScenarioDesc: salesTypeSelected,
-                                                    Environment: environmentText,
-                                                    QRImage: qrBase64
-                                                };
-                                            
-                                                var api_url = baseURLValue + 'InsertFBR_Response';
-                                            
-                                                makeApiCall({
-                                                    url: api_url,
-                                                    method: 'POST',
-                                                    token: token,
-                                                    data: obj,
-                                                    successCallback: function (result) {
-                                                        // if ((i + 1) == totalRows) {
-                                                            alert("Success: " + result.actualData[0]["Message"]);
-                                                            window.location.href = baseURLValue + 'invoices';
-                                                        // }
-                                                    },
-                                                    errorCallback: function (xhr, status, error) {
-                                                        alert("Bad Request: " + xhr.responseText)
-                                                        console.error("Error:", error, xhr.responseText);
-                                                    }
-                                                });
-                                            
-                                            }, 200);
-                                        // }
-
-
-
+                                            });                                        
+                                        }, 200);
+                                       
 
                                         // var totalRows = response.validationResponse.invoiceStatuses.length;
                                         // var qrBase64 = "";
@@ -1413,8 +1640,8 @@ function LoadProvinces() {
 
 function fetchUOMFromAPI(hsCode, targetCellId) {
 //function fetchUOMFromAPI(hsCode, $cell) {
-    debugger
-    const FBR_token = $("#tokenValueInput").val();
+    // const FBR_token = $("#tokenValueInput").val();
+    const FBR_token = $("#tokenValueInputHdn").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
         $("#tokenValue").val("");
@@ -1442,7 +1669,7 @@ function fetchUOMFromAPI(hsCode, targetCellId) {
                     },
                 };
 
-                $.ajax(settings).done(function (response) {debugger
+                $.ajax(settings).done(function (response) {
                     // const uom = response[0]["description"] || 'N/A';
                     const uom = response?.[0]?.description ?? 'N/A';
                     $('#' + targetCellId).text(uom);
@@ -1464,7 +1691,8 @@ function fetchUOMFromAPI(hsCode, targetCellId) {
 
 // function fetchRegistrationTypefromAPI(ntn, targetCellId) {
 function fetchRegistrationTypefromAPI(ntn, $cell) {
-    const FBR_token = $("#tokenValueInput").val();
+    // const FBR_token = $("#tokenValueInput").val();
+    const FBR_token = $("#tokenValueInputHdn").val();
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
         $("#tokenValue").val("");
@@ -1527,7 +1755,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
 
     const $rateCell = $row.find('td[id^="rate-"]'); // any td with id like rate-1, rate-2, etc.
     const colRateID = $rateCell.attr('id');            // 'rate-1'
-
+    
     const $netAmountCell = $row.find('td[id^="netAmount-"]');
     const netAmountValue = $netAmountCell.text().trim();      // text inside the cell
 
