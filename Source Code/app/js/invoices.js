@@ -43,7 +43,7 @@ $(document).ready(function () {
         $("#carcassModal").modal('show');
     }
     $("#tokenValueInput").val(localStorage.getItem('pushToken'));
-    $("#tokenValueInputHdn").val(localStorage.getItem('pushToken'));
+    $("#tokenValueInputHdn").val(localStorage.getItem('fetchDataToken'));
 });
 
 $("#environment").click(function () {
@@ -917,7 +917,6 @@ $('#carcassTable').on('change', '#selectAll', function () {
 });
 
 $('#carcassTable').on('change', '.row-checkbox', function () {
-    debugger;
     var id = $(this).val();
     var $row = $(this).closest('tr');
 
@@ -999,7 +998,6 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
         // //     }
         // // });
         if (rowData[22] == "16%") {
-            debugger
             var saleValue = parseFloat(rowData[25].replace(/,/g, ""));
             var taxCharged = parseFloat(rowData[27].replace(/,/g, ""));
             // PRA_selectedRows.push(rowData);
@@ -1067,32 +1065,6 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
 
 //#endregion
 
-//#region "Save Token in hidden field"
-
-$("#btnSave").click(function SaveEditButton() {
-    if ($("#tokenValue").val() == "") {
-        alert("Please select an Environment.");
-        return;
-    }
-    if ($("#tokenDD").val() == "pushInvoiceToSandboxToken") {
-        $("#environment").text("(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
-        localStorage.setItem('environmentName', "(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
-    }
-    else if ($("#tokenDD").val() == "pushInvoiceToProductionToken") {
-        $("#environment").text("(Production Environment - " + $("#authorityDD").val().replace("_", ""));
-        localStorage.setItem('environmentName', "(Production Environment) - " + $("#authorityDD").val().replace("_", ""));
-    }
-    else {
-
-    }
-    $("#tokenValueInput").val($("#tokenValue").val());
-    localStorage.setItem('pushToken', $("#tokenValueInputHdn").val());
-    $("#carcassModal").modal('hide');
-
-});
-
-//#endregion
-
 //#region "Fetch Token on Environment Selection"
 
 $("#tokenDD").change(function () {
@@ -1125,12 +1097,13 @@ $("#tokenDD").change(function () {
                     token: token,
                     data: tokenObj, // You can pass any data you want to send
                     successCallback: function (result) {
+                        debugger
                         if (b == 0) {
-                            $("#tokenValue").val(result.token);
-                            $("#tokenValueInput").val(result.token);
+                            $("#tokenValue").val(result.token);     //Actual Environment Token
+                            $("#tokenValueInput").val(result.token);     //Actual Environment Token
                             b = 1;
                         } else {
-                            $("#tokenValueInputHdn").val(result.token);
+                            $("#tokenValueInputHdn").val(result.token);     //FBR Token for UOM and other value fetching from Portal
                         }
                         
                     },
@@ -1171,6 +1144,33 @@ $("#tokenDD").change(function () {
 
 //#endregion
 
+//#region "Save Token in hidden field"
+
+$("#btnSave").click(function SaveEditButton() {
+    if ($("#tokenValue").val() == "") {
+        alert("Please select an Environment.");
+        return;
+    }
+    if ($("#tokenDD").val() == "pushInvoiceToSandboxToken") {
+        $("#environment").text("(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
+        localStorage.setItem('environmentName', "(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
+    }
+    else if ($("#tokenDD").val() == "pushInvoiceToProductionToken") {
+        $("#environment").text("(Production Environment - " + $("#authorityDD").val().replace("_", ""));
+        localStorage.setItem('environmentName', "(Production Environment) - " + $("#authorityDD").val().replace("_", ""));
+    }
+    else {
+
+    }
+    $("#tokenValueInput").val($("#tokenValue").val());
+    localStorage.setItem('pushToken', $("#tokenValueInput").val());
+    localStorage.setItem('fetchDataToken', $("#tokenValueInputHdn").val());
+    $("#carcassModal").modal('hide');
+
+});
+
+//#endregion
+
 //#region "Search Btn click"
 
 $("#searchBtn").click(function () {
@@ -1194,30 +1194,31 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
+    var PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/production/api/Live/PostData";
     const environmentText = $("#environment").text().trim();
     if (environmentText.includes("PRA")) {
-        debugger;
-        console.log(PRA_selectedRows);
-var totalQuantity = 0.0;
-var totalSaleValue = 0.0;
-var totalTaxCharged = 0.0;
-var discount = 0.0;
-var furtherTax = 0.0;
-var totalBillAmount = 0.0;
-        for (let index = 0; index < PRA_selectedRows.length; index++) {
-            totalQuantity += Number(PRA_selectedRows[index].Quantity);
-            totalSaleValue += Number(PRA_selectedRows[index].SaleValue);
-            totalTaxCharged += Number(PRA_selectedRows[index].TaxCharged);
-            discount += Number(PRA_selectedRows[index].Discount);
-            furtherTax += Number(PRA_selectedRows[index].FurtherTax);
-        };
-
-        totalBillAmount = totalSaleValue + totalTaxCharged;
-
+        if (environmentText.includes("Sandbox")) {
+            PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/sandbox/api/Live/PostData";
+        }
         const groupedByInvoice = {};
         PRA_selectedRows.forEach(item => {
             const invoiceKey = item.USIN;
             if (!groupedByInvoice[invoiceKey]) {
+                var totalQuantity = 0.0;
+                var totalSaleValue = 0.0;
+                var totalTaxCharged = 0.0;
+                var discount = 0.0;
+                var furtherTax = 0.0;
+                var totalBillAmount = 0.0;
+                // for (let index = 0; index < PRA_selectedRows.length; index++) {
+                    totalQuantity += Number(item.Quantity);
+                    totalSaleValue += Number(item.SaleValue);
+                    totalTaxCharged += Number(item.TaxCharged);
+                    discount += Number(item.Discount);
+                    furtherTax += Number(item.FurtherTax);
+                // };
+            
+                totalBillAmount = totalSaleValue + totalTaxCharged;
                 groupedByInvoice[invoiceKey] = {
                     InvoiceNumber: "",
                     POSID: 821732,
@@ -1238,12 +1239,11 @@ var totalBillAmount = 0.0;
                     InvoiceType: item.InvoiceType,
                     Items: []
                 };
-                
             }
             groupedByInvoice[invoiceKey].Items.push({
                 ItemCode: item.ItemCode,
                 ItemName: item.ItemName,
-                Quantity: item.Quantity,
+                Quantity: Number(item.Quantity),
                 PCTCode: item.PCTCode,
                 TaxRate: item.TaxRate,
                 SaleValue: item.SaleValue,
@@ -1253,24 +1253,6 @@ var totalBillAmount = 0.0;
                 FurtherTax: item.FurtherTax,
                 InvoiceType: item.InvoiceType,
                 RefUSIN: item.RefUSIN,
-
-                // hsCode: item.hsCode.split("-")[0],
-                // productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
-                // rate: item.rate,
-                // uoM: item.uoM,
-                // quantity: Number(item.quantity.replace(/,/g, '')),
-                // totalValues: Number(item.totalValues.replace(/,/g, '')),
-                // valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
-                // fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
-                // salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
-                // salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
-                // extraTax: item.extraTax,
-                // furtherTax: Number(item.furtherTax),
-                // sroScheduleNo: item.sroScheduleNo,
-                // fedPayable: Number(item.fedPayable),
-                // discount: Number(item.discount),
-                // saleType: salesTypeSelectedArr[0], // assign the specific element
-                // sroItemSerialNo: item.sroItemSerialNo
             });
         });
 
@@ -1284,7 +1266,7 @@ var totalBillAmount = 0.0;
             url: fileWriter_URL,
             method: 'POST',
             token: token,
-            data: finalPayload, // You can pass any data you want to send
+            data: PRA_finalPayload, // You can pass any data you want to send
             successCallback: function (result) {
                 // console.log(result);
             },
@@ -1296,8 +1278,178 @@ var totalBillAmount = 0.0;
 
         //#endregion
 
-        return;
+        const FBR_token = $("#tokenValueInput").val();
+        if (!localStorage.getItem('token')) {
+            window.location.href = baseURLValue;
+            $("#tokenValue").val("");
+        } else {
+            var api_url = baseURLValue + 'getTokenCallDecrypted';
+            $("#tokenValue").val("");
+            const tokenObj = {
+                decTokenKey: FBR_token
+            };
+            makeApiCall({
+                url: api_url,
+                method: 'POST',
+                token: token,
+                data: tokenObj,
+                successCallback: function (result) {
+                    debugger
+                    const fbrAPIToken = result.token;
+                    if (!localStorage.getItem('token')) {
+                        window.location.href = baseURLValue;
+                    } else {
+                        PRA_finalPayload.forEach((PRA_finalPayload, index) => {
+                            $.ajax({
+                                url: PRA_invoice_Push_URL,
+                                method: 'POST',
+                                contentType: 'application/json',
+                                headers: {
+                                    'Authorization': 'Bearer ' + fbrAPIToken.trim()
+                                },
+                                data: JSON.stringify(PRA_finalPayload),
+                                success: function (response) {
+                                    debugger
+                                    if (response.Code == null || response.Code == "") {
+                                        alert(response.validationResponse.error)
+                                    }
+                                    else if (!response.Response.includes("successfully")) {
+                                        alert(response.validationResponse.invoiceStatuses[0]['error'])
+                                    }
+                                    else {
+                                        if (!localStorage.getItem('token')) {
+                                            window.location.href = baseURLValue;
+                                        } else {
+                                            //let totalRows = response.length;
+                                            let PRA_Invoice_No_QR = response.InvoiceNumber;
+                                            let PRA_Invoice_No = response.InvoiceNumber;
+
+                                            var current_DateTime = new Date();
+                                            var current_Year = current_DateTime.getFullYear();
+                                            var current_Month = current_DateTime.getMonth() + 1;
+                                            var current_Date = current_DateTime.getDate();
+                                            var current_Hour = current_DateTime.getHours();
+                                            var current_Month = current_DateTime.getMinutes();
+                                            var current_Second = current_DateTime.getSeconds();
+
+                                            var final_DateTime = current_Year + "-" + current_Month + "-" + current_Date + " " + current_Hour + ":" + current_Minute + ":" + current_Second + ".000"; //"2026-08-21 12:00:00.000"
+                                            
+                                            let qrBase64 = "";
+                                            let tempDiv = document.createElement("div");
+                                            let qrcode = new QRCode(tempDiv, {
+                                                text: PRA_Invoice_No_QR,
+                                                width: 200,
+                                                height: 200,
+                                                correctLevel: QRCode.CorrectLevel.M,
+                                                version: 2
+                                            });
+                                            setTimeout(function () {                                            
+                                                let img = tempDiv.querySelector("img");
+                                                let canvas = tempDiv.querySelector("canvas");                                        
+                                                if (img) {
+                                                    qrBase64 = img.src;
+                                                } else if (canvas) {
+                                                    qrBase64 = canvas.toDataURL("image/png");
+                                                }                                        
+                                                if (!qrBase64) {
+                                                    console.error("QR generation failed");
+                                                    return;
+                                                }                                        
+                                                const obj = {
+                                                    Sopnumbr: PRA_finalPayload.USIN,
+                                                    FBR_InvoiceNo: PRA_Invoice_No,
+                                                    // Dated: "2026-08-21 12:00:00.000",
+                                                    Dated: final_DateTime,
+                                                    Status: "Success",
+                                                    StatusCode: response.Code,
+                                                    ScenarioID: "",
+                                                    ScenarioDesc: "",
+                                                    Environment: environmentText,
+                                                    QRImage: qrBase64
+                                                };                                        
+                                                var api_url = baseURLValue + 'InsertFBR_Response';                                        
+                                                makeApiCall({
+                                                    url: api_url,
+                                                    method: 'POST',
+                                                    token: token,
+                                                    data: obj,
+                                                    successCallback: function (result) {
+                                                        // if ((i + 1) == totalRows) {
+                                                            alert("Success: " + result.actualData[0]["Message"]);
+                                                            window.location.href = baseURLValue + 'invoices';
+                                                            return;
+                                                        // }
+                                                    },
+                                                    errorCallback: function (xhr, status, error) {
+                                                        alert("Bad Request: " + xhr.responseText)
+                                                        console.error("Error:", error, xhr.responseText);
+                                                    }
+                                                });                                        
+                                            }, 200); 
+                                        }
+                                    }
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
+                                    alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                                }
+                            });
+                        });
+                    }
+                },
+                errorCallback: function (xhr, status, error) {
+                    console.error("Error:", error);
+                    $("#tokenValue").val("");
+                }
+            });
+        };
+        
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
     if (selectedRows.length === 0) {
         alert("Please select an invoice to push.");
