@@ -1194,6 +1194,9 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
+    
+    //#region "Pushing Invoices to PRA"
+
     var PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/production/api/Live/PostData";
     const environmentText = $("#environment").text().trim();
     if (environmentText.includes("PRA")) {
@@ -1294,11 +1297,11 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 token: token,
                 data: tokenObj,
                 successCallback: function (result) {
-                    debugger
                     const fbrAPIToken = result.token;
                     if (!localStorage.getItem('token')) {
                         window.location.href = baseURLValue;
                     } else {
+                        var i = 0;
                         PRA_finalPayload.forEach((PRA_finalPayload, index) => {
                             $.ajax({
                                 url: PRA_invoice_Push_URL,
@@ -1309,7 +1312,6 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                 },
                                 data: JSON.stringify(PRA_finalPayload),
                                 success: function (response) {
-                                    debugger
                                     if (response.Code == null || response.Code == "") {
                                         alert(response.validationResponse.error)
                                     }
@@ -1320,7 +1322,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                         if (!localStorage.getItem('token')) {
                                             window.location.href = baseURLValue;
                                         } else {
-                                            //let totalRows = response.length;
+                                            let PRA_totalRows = PRA_selectedRows.length;
                                             let PRA_Invoice_No_QR = response.InvoiceNumber;
                                             let PRA_Invoice_No = response.InvoiceNumber;
 
@@ -1329,7 +1331,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                             var current_Month = current_DateTime.getMonth() + 1;
                                             var current_Date = current_DateTime.getDate();
                                             var current_Hour = current_DateTime.getHours();
-                                            var current_Month = current_DateTime.getMinutes();
+                                            var current_Minute = current_DateTime.getMinutes();
                                             var current_Second = current_DateTime.getSeconds();
 
                                             var final_DateTime = current_Year + "-" + current_Month + "-" + current_Date + " " + current_Hour + ":" + current_Minute + ":" + current_Second + ".000"; //"2026-08-21 12:00:00.000"
@@ -1374,11 +1376,12 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     token: token,
                                                     data: obj,
                                                     successCallback: function (result) {
-                                                        // if ((i + 1) == totalRows) {
+                                                        i++;
+                                                        if (i== PRA_totalRows) {
                                                             alert("Success: " + result.actualData[0]["Message"]);
                                                             window.location.href = baseURLValue + 'invoices';
                                                             return;
-                                                        // }
+                                                        }
                                                     },
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
@@ -1402,333 +1405,232 @@ $("#pushToFBRBtn").click(function AddBtn() {
                     $("#tokenValue").val("");
                 }
             });
-        };
-        
+        };    
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
-    if (selectedRows.length === 0) {
-        alert("Please select an invoice to push.");
-        return;
-    }
-    var keys = [
-        "invoiceRefNo", "invoiceType", "zultecItemNo", "sroItemSerialNo", "productDescription",
-        "buyerNTNCNIC", "buyerBusinessName", "buyerProvince", "buyerAddress", "buyerRegistrationType",
-        "sellerNTNCNIC", "sellerBusinessName", "sellerProvince", "sellerAddress",
-        "invoiceDate", "hsCode", "hsCodeDesc", "uoM", "category", "scenarioId", "rate", "quantity",
-        "totalValues", "valueSalesExcludingST", "fixedNotifiedValueOrRetailPrice",
-        "salesTaxApplicable", "salesTaxWithheldAtSource", "extraTax", "furtherTax",
-        "sroScheduleNo", "fedPayable", "discount", "saleType", "fbr_invoice_no"
-    ];
-    
-    let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
-    const rawDataObjects = cleanedRows.map(valuesArr => {
-        const obj = {};
-        keys.forEach((key, idx) => {            
-            if (idx !== 2 && idx !== 16 && idx !== 18 && idx !== 33) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18, fbr_invoice_no = 33
-                obj[key] = valuesArr[idx];
-            }
-        });
-        return obj;
-    });
-    const groupedByInvoice = {};
-    
-    rawDataObjects.forEach(item => {
-        const invoiceKey = item.invoiceRefNo;
-        if (!groupedByInvoice[invoiceKey]) {
-            groupedByInvoice[invoiceKey] = {
-                invoiceRefNo: item.invoiceRefNo,
-                invoiceType: item.invoiceType,
-                invoiceDate: item.invoiceDate,
-                sellerNTNCNIC: item.sellerNTNCNIC,
-                sellerBusinessName: item.sellerBusinessName,
-                sellerProvince: item.sellerProvince,
-                sellerAddress: item.sellerAddress,
-                buyerNTNCNIC: item.buyerNTNCNIC,
-                buyerBusinessName: item.buyerBusinessName,
-                buyerProvince: item.buyerProvince,
-                buyerAddress: item.buyerAddress,
-                buyerRegistrationType: item.buyerRegistrationType,
-                //scenarioId: scenarioIDSelected,
-                items: []
-            };
-            // ✅ Add scenarioId only in Sandbox
-            // if (environmentText === "(Sandbox Environment)") {
-            if (environmentText === "(Sandbox Environment) - FBR") {
-                groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
-                invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb';
-            }
-            //groupedByInvoice[invoiceKey].sellerProvince = provinceSelected;
-        }
-        groupedByInvoice[invoiceKey].items.push({
-            hsCode: item.hsCode.split("-")[0],
-            productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
-            rate: item.rate,
-            uoM: item.uoM,
-            quantity: Number(item.quantity.replace(/,/g, '')),
-            totalValues: Number(item.totalValues.replace(/,/g, '')),
-            valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
-            fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
-            salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
-            salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
-            extraTax: item.extraTax,
-            furtherTax: Number(item.furtherTax),
-            sroScheduleNo: item.sroScheduleNo,
-            fedPayable: Number(item.fedPayable),
-            discount: Number(item.discount),
-            saleType: salesTypeSelectedArr[0], // assign the specific element
-            sroItemSerialNo: item.sroItemSerialNo
-        });
-
-        itemCounter++; // increment counter for next item
-    });
-
-    const finalPayload = Object.values(groupedByInvoice);
-
-    //#region "Write payload in a file"
-
-    var fileWriter_URL = baseURLValue + 'save-invoice';
-
-    makeApiCall({
-        url: fileWriter_URL,
-        method: 'POST',
-        token: token,
-        data: finalPayload, // You can pass any data you want to send
-        successCallback: function (result) {
-            // console.log(result);
-        },
-        errorCallback: function (xhr, status, error) {
-            alert("Bad Request: " + xhr.responseText)
-            console.error("Error:", error, xhr.responseText);
-        }
-    });
 
     //#endregion
 
-    const FBR_token = $("#tokenValueInputHdn").val();
-    if (!localStorage.getItem('token')) {
-        window.location.href = baseURLValue;
-        $("#tokenValue").val("");
-    } else {
-        var api_url = baseURLValue + 'getTokenCallDecrypted';
-        $("#tokenValue").val("");
-        const tokenObj = {
-            decTokenKey: FBR_token
-        };
+    //#region "Pushing Invoices to FBR"
+    
+    else {
+
+        var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
+        if (selectedRows.length === 0) {
+            alert("Please select an invoice to push.");
+            return;
+        }
+        var keys = [
+            "invoiceRefNo", "invoiceType", "zultecItemNo", "sroItemSerialNo", "productDescription",
+            "buyerNTNCNIC", "buyerBusinessName", "buyerProvince", "buyerAddress", "buyerRegistrationType",
+            "sellerNTNCNIC", "sellerBusinessName", "sellerProvince", "sellerAddress",
+            "invoiceDate", "hsCode", "hsCodeDesc", "uoM", "category", "scenarioId", "rate", "quantity",
+            "totalValues", "valueSalesExcludingST", "fixedNotifiedValueOrRetailPrice",
+            "salesTaxApplicable", "salesTaxWithheldAtSource", "extraTax", "furtherTax",
+            "sroScheduleNo", "fedPayable", "discount", "saleType", "fbr_invoice_no"
+        ];
+
+        let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
+        const rawDataObjects = cleanedRows.map(valuesArr => {
+            const obj = {};
+            keys.forEach((key, idx) => {            
+                if (idx !== 2 && idx !== 16 && idx !== 18 && idx !== 33) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18, fbr_invoice_no = 33
+                    obj[key] = valuesArr[idx];
+                }
+            });
+            return obj;
+        });
+        const groupedByInvoice = {};
+
+        rawDataObjects.forEach(item => {
+            const invoiceKey = item.invoiceRefNo;
+            if (!groupedByInvoice[invoiceKey]) {
+                groupedByInvoice[invoiceKey] = {
+                    invoiceRefNo: item.invoiceRefNo,
+                    invoiceType: item.invoiceType,
+                    invoiceDate: item.invoiceDate,
+                    sellerNTNCNIC: item.sellerNTNCNIC,
+                    sellerBusinessName: item.sellerBusinessName,
+                    sellerProvince: item.sellerProvince,
+                    sellerAddress: item.sellerAddress,
+                    buyerNTNCNIC: item.buyerNTNCNIC,
+                    buyerBusinessName: item.buyerBusinessName,
+                    buyerProvince: item.buyerProvince,
+                    buyerAddress: item.buyerAddress,
+                    buyerRegistrationType: item.buyerRegistrationType,
+                    //scenarioId: scenarioIDSelected,
+                    items: []
+                };
+                // ✅ Add scenarioId only in Sandbox
+                // if (environmentText === "(Sandbox Environment)") {
+                if (environmentText === "(Sandbox Environment) - FBR") {
+                    groupedByInvoice[invoiceKey].scenarioId = scenarioIDSelected;
+                    invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb';
+                }
+                //groupedByInvoice[invoiceKey].sellerProvince = provinceSelected;
+            }
+            groupedByInvoice[invoiceKey].items.push({
+                hsCode: item.hsCode.split("-")[0],
+                productDescription: item.productDescription.replace(/\\"/g, '').slice(0, 70),
+                rate: item.rate,
+                uoM: item.uoM,
+                quantity: Number(item.quantity.replace(/,/g, '')),
+                totalValues: Number(item.totalValues.replace(/,/g, '')),
+                valueSalesExcludingST: Number(item.valueSalesExcludingST.replace(/,/g, '')),
+                fixedNotifiedValueOrRetailPrice: Number(item.fixedNotifiedValueOrRetailPrice),
+                salesTaxApplicable: Number(item.salesTaxApplicable.replace(/,/g, '')),
+                salesTaxWithheldAtSource: Number(item.salesTaxWithheldAtSource),
+                extraTax: item.extraTax,
+                furtherTax: Number(item.furtherTax),
+                sroScheduleNo: item.sroScheduleNo,
+                fedPayable: Number(item.fedPayable),
+                discount: Number(item.discount),
+                saleType: salesTypeSelectedArr[0], // assign the specific element
+                sroItemSerialNo: item.sroItemSerialNo
+            });
+
+            itemCounter++; // increment counter for next item
+        });
+
+        const finalPayload = Object.values(groupedByInvoice);
+
+        //#region "Write payload in a file"
+
+        var fileWriter_URL = baseURLValue + 'save-invoice';
+
         makeApiCall({
-            url: api_url,
+            url: fileWriter_URL,
             method: 'POST',
             token: token,
-            data: tokenObj,
+            data: finalPayload, // You can pass any data you want to send
             successCallback: function (result) {
-                const fbrAPIToken = result.token;
-                if (!localStorage.getItem('token')) {
-                    window.location.href = baseURLValue;
-                } else {
-                    finalPayload.forEach((finalPayload, index) => {
-                        $.ajax({
-                            // url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb'    //Sandbox URL,
-                            //url: 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata',       //Production URL
-                            url: invoice_Push_URL,
-                            method: 'POST',
-                            contentType: 'application/json',
-                            headers: {
-                                'Authorization': 'Bearer ' + fbrAPIToken.trim()
-                            },
-                            data: JSON.stringify(finalPayload),
-                            success: function (response) {
-                                if (response.validationResponse.invoiceStatuses == null) {
-                                    alert(response.validationResponse.error)
-                                }
-                                else if (response.validationResponse.status == "Invalid") {
-                                    alert(response.validationResponse.invoiceStatuses[0]['error'])
-                                }
-                                else {
-                                    if (!localStorage.getItem('token')) {
-                                        window.location.href = baseURLValue;
-                                    } else {
-                                        let totalRows = response.validationResponse.invoiceStatuses.length;
-                                        let fbr_Invoice_No_QR = response.invoiceNumber;
-                                        let fbr_Invoice_No = response.invoiceNumber;
-                                        // let fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
-                                        let qrBase64 = "";
-                                        let tempDiv = document.createElement("div");
-                                        let qrcode = new QRCode(tempDiv, {
-                                            text: fbr_Invoice_No_QR,
-                                            width: 200,
-                                            height: 200,
-                                            correctLevel: QRCode.CorrectLevel.M,
-                                            version: 2
-                                        });
-                                        setTimeout(function () {
-                                        
-                                            let img = tempDiv.querySelector("img");
-                                            let canvas = tempDiv.querySelector("canvas");                                        
-                                            if (img) {
-                                                qrBase64 = img.src;
-                                            } else if (canvas) {
-                                                qrBase64 = canvas.toDataURL("image/png");
-                                            }                                        
-                                            if (!qrBase64) {
-                                                console.error("QR generation failed");
-                                                return;
-                                            }                                        
-                                            const obj = {
-                                                Sopnumbr: finalPayload.invoiceRefNo,
-                                                FBR_InvoiceNo: fbr_Invoice_No,
-                                                Dated: response.dated,
-                                                Status: response.validationResponse.invoiceStatuses[0]['status'],
-                                                StatusCode: response.validationResponse.invoiceStatuses[0]['statusCode'],
-                                                ScenarioID: scenarioIDSelected,
-                                                ScenarioDesc: salesTypeSelected,
-                                                Environment: environmentText,
-                                                QRImage: qrBase64
-                                            };                                        
-                                            var api_url = baseURLValue + 'InsertFBR_Response';                                        
-                                            makeApiCall({
-                                                url: api_url,
-                                                method: 'POST',
-                                                token: token,
-                                                data: obj,
-                                                successCallback: function (result) {
-                                                    // if ((i + 1) == totalRows) {
-                                                        alert("Success: " + result.actualData[0]["Message"]);
-                                                        window.location.href = baseURLValue + 'invoices';
-                                                    // }
-                                                },
-                                                errorCallback: function (xhr, status, error) {
-                                                    alert("Bad Request: " + xhr.responseText)
-                                                    console.error("Error:", error, xhr.responseText);
-                                                }
-                                            });                                        
-                                        }, 200);
-                                       
-
-                                        // var totalRows = response.validationResponse.invoiceStatuses.length;
-                                        // var qrBase64 = "";
-                                        // for (let i = 0; i < response.validationResponse.invoiceStatuses.length; i++) {
-
-                                        //     var fbr_Invoice_No = response.validationResponse.invoiceStatuses[i]['invoiceNo'];
-                                            
-                                        //     var tempDiv = document.createElement("div");
-                                        //     var qrcode = new QRCode(tempDiv, {
-                                        //         text: fbr_Invoice_No,
-                                        //         width: 200,      // pixel size
-                                        //         height: 200,
-                                        //         correctLevel: QRCode.CorrectLevel.M, // error correction level (L, M, Q, H)
-                                        //         version: 2       // force QR code version 2
-                                        //         //QRCode.CorrectLevel.L → Low (7%)
-                                        //         //QRCode.CorrectLevel.M → Medium (15%)
-                                        //         //QRCode.CorrectLevel.Q → Quartile (25%)
-                                        //         //QRCode.CorrectLevel.H → High (30%)
-                                        //     });
-                                        //     setTimeout(function () {                                                
-                                        //         var img = tempDiv.querySelector("img");
-                                        //         var canvas = tempDiv.querySelector("canvas");
-                                        //         if (img) {
-                                        //             qrBase64 = img.src;
-                                        //         }
-                                        //         else if (canvas) {
-                                        //             qrBase64 = canvas.toDataURL("image/png");
-                                        //         }
-                                        //         if (!qrBase64) {
-                                        //             console.error("QR generation failed");
-                                        //             return;
-                                        //         }                                          
-
-                                        //         const obj = {
-                                        //             Sopnumbr: finalPayload.invoiceRefNo,
-                                        //             FBR_InvoiceNo: fbr_Invoice_No,
-                                        //             Dated: response.dated,
-                                        //             Status: response.validationResponse.invoiceStatuses[i]['status'],
-                                        //             StatusCode: response.validationResponse.invoiceStatuses[i]['statusCode'],
-                                        //             ScenarioID: scenarioIDSelected,
-                                        //             ScenarioDesc: salesTypeSelected,
-                                        //             Environment: environmentText,
-                                        //             QRImage: qrBase64
-                                        //         };
-                                        //         var api_url = baseURLValue + 'InsertFBR_Response';
-                                        //         makeApiCall({
-                                        //             url: api_url,
-                                        //             method: 'POST',
-                                        //             token: token,
-                                        //             data: obj, // You can pass any data you want to send
-                                        //             successCallback: function (result) {
-                                        //                 if ((i + 1) == totalRows) {
-                                        //                     alert("Success: " + result.actualData[0]["Message"]);
-                                        //                     window.location.href = baseURLValue + 'invoices';
-                                        //                 }
-                                        //             },
-                                        //             errorCallback: function (xhr, status, error) {
-                                        //                 alert("Bad Request: " + xhr.responseText)
-                                        //                 console.error("Error:", error, xhr.responseText);
-                                        //             }
-                                        //         });
-                                        //     }, 200);
-                                        // }   
-                                    }
-                                }
-                            },
-                            error: function (xhr, status, error) {
-                                console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
-                                alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
-                            }
-
-                        });
-                    });
-                }
+                // console.log(result);
             },
             errorCallback: function (xhr, status, error) {
-                console.error("Error:", error);
-                $("#tokenValue").val("");
+                alert("Bad Request: " + xhr.responseText)
+                console.error("Error:", error, xhr.responseText);
             }
         });
-    };
+
+        //#endregion
+
+        const FBR_token = $("#tokenValueInputHdn").val();
+        if (!localStorage.getItem('token')) {
+            window.location.href = baseURLValue;
+            $("#tokenValue").val("");
+        } else {
+            var api_url = baseURLValue + 'getTokenCallDecrypted';
+            $("#tokenValue").val("");
+            const tokenObj = {
+                decTokenKey: FBR_token
+            };
+            makeApiCall({
+                url: api_url,
+                method: 'POST',
+                token: token,
+                data: tokenObj,
+                successCallback: function (result) {
+                    const fbrAPIToken = result.token;
+                    if (!localStorage.getItem('token')) {
+                        window.location.href = baseURLValue;
+                    } else {
+                        finalPayload.forEach((finalPayload, index) => {
+                            $.ajax({
+                                url: invoice_Push_URL,
+                                method: 'POST',
+                                contentType: 'application/json',
+                                headers: {
+                                    'Authorization': 'Bearer ' + fbrAPIToken.trim()
+                                },
+                                data: JSON.stringify(finalPayload),
+                                success: function (response) {
+                                    if (response.validationResponse.invoiceStatuses == null) {
+                                        alert(response.validationResponse.error)
+                                    }
+                                    else if (response.validationResponse.status == "Invalid") {
+                                        alert(response.validationResponse.invoiceStatuses[0]['error'])
+                                    }
+                                    else {
+                                        if (!localStorage.getItem('token')) {
+                                            window.location.href = baseURLValue;
+                                        } else {
+                                            let totalRows = response.validationResponse.invoiceStatuses.length;
+                                            let fbr_Invoice_No_QR = response.invoiceNumber;
+                                            let fbr_Invoice_No = response.invoiceNumber;
+                                            let qrBase64 = "";
+                                            let tempDiv = document.createElement("div");
+                                            let qrcode = new QRCode(tempDiv, {
+                                                text: fbr_Invoice_No_QR,
+                                                width: 200,
+                                                height: 200,
+                                                correctLevel: QRCode.CorrectLevel.M,
+                                                version: 2
+                                            });
+                                            setTimeout(function () {
+                                            
+                                                let img = tempDiv.querySelector("img");
+                                                let canvas = tempDiv.querySelector("canvas");                                        
+                                                if (img) {
+                                                    qrBase64 = img.src;
+                                                } else if (canvas) {
+                                                    qrBase64 = canvas.toDataURL("image/png");
+                                                }                                        
+                                                if (!qrBase64) {
+                                                    console.error("QR generation failed");
+                                                    return;
+                                                }                                        
+                                                const obj = {
+                                                    Sopnumbr: finalPayload.invoiceRefNo,
+                                                    FBR_InvoiceNo: fbr_Invoice_No,
+                                                    Dated: response.dated,
+                                                    Status: response.validationResponse.invoiceStatuses[0]['status'],
+                                                    StatusCode: response.validationResponse.invoiceStatuses[0]['statusCode'],
+                                                    ScenarioID: scenarioIDSelected,
+                                                    ScenarioDesc: salesTypeSelected,
+                                                    Environment: environmentText,
+                                                    QRImage: qrBase64
+                                                };                                        
+                                                var api_url = baseURLValue + 'InsertFBR_Response';                                        
+                                                makeApiCall({
+                                                    url: api_url,
+                                                    method: 'POST',
+                                                    token: token,
+                                                    data: obj,
+                                                    successCallback: function (result) {
+                                                        // if ((i + 1) == totalRows) {
+                                                            alert("Success: " + result.actualData[0]["Message"]);
+                                                            window.location.href = baseURLValue + 'invoices';
+                                                        // }
+                                                    },
+                                                    errorCallback: function (xhr, status, error) {
+                                                        alert("Bad Request: " + xhr.responseText)
+                                                        console.error("Error:", error, xhr.responseText);
+                                                    }
+                                                });                                        
+                                            }, 200);
+                                        }
+                                    }
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
+                                    alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                                }
+
+                            });
+                        });
+                    }
+                },
+                errorCallback: function (xhr, status, error) {
+                    console.error("Error:", error);
+                    $("#tokenValue").val("");
+                }
+            });
+        };
+    }
+
+    //#endregion
+
 });
+
 
 //#endregion
 
