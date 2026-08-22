@@ -1,4 +1,10 @@
+//#region "Declaration"
+
 let timerInterval;
+
+//#endregion
+
+//#region "Show Normal SweetAlert"
 
 function showSweetAlert(iconRes, titleRes, textRes, htmlRes, timer) {
     return Swal.fire({
@@ -13,6 +19,10 @@ function showSweetAlert(iconRes, titleRes, textRes, htmlRes, timer) {
     });
 };
 
+//#endregion
+
+//#region "Show SweetAlert with Spinner"
+
 function showSweetAlertWithSpinner(){
     Swal.fire({
         title: 'Loading...',
@@ -23,6 +33,10 @@ function showSweetAlertWithSpinner(){
         }
     });
 };
+
+//#endregion
+
+//#region "Show SweetAlert for Confirmation"
 
 function showConfirmAlert(iconRes, titleRes, textRes, confirmBtnText, cancelBtnText) {
     return Swal.fire({
@@ -36,4 +50,6 @@ function showConfirmAlert(iconRes, titleRes, textRes, confirmBtnText, cancelBtnT
         confirmButtonColor: '#d33', // Red color for the "Yes, delete it!" button (danger button)
         cancelButtonColor: '#3085d6', // Blue color for the "Cancel" button (default)
     });
-}
+};
+
+//#endregion
