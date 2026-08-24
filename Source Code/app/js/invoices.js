@@ -44,6 +44,8 @@ $(document).ready(function () {
     }
     $("#tokenValueInput").val(localStorage.getItem('pushToken'));
     $("#tokenValueInputHdn").val(localStorage.getItem('fetchDataToken'));
+    $("#authorityText").text(localStorage.getItem('pushButtonText'));
+
 });
 
 $("#environment").click(function () {
@@ -123,7 +125,7 @@ function FillDataTable(jsonData) {
             row.append('<td><input type="checkbox" class="row-checkbox"></td>');
         }
         else {
-            row.append('<td><input disabled type="checkbox" class="row-checkbox"></td>');    
+            row.append('<td><input disabled type="checkbox" class="row-checkbox"></td>');
         }
         // row.append('<td><input type="checkbox" class="row-checkbox"></td>');
         row.append('<td style="text-align: center; color:' + color + ';" title="' + status + '">' + icon + '</td>');
@@ -138,7 +140,7 @@ function FillDataTable(jsonData) {
         const buyerNTN = data['NTN#'].trim().split('-')[0];
         row.append('<td>' + buyerNTN + '</td>'); //Customer NTN# or "buyerNTNCNIC"
         row.append('<td>' + data['Customer Name'].trim() + '</td>');    //Name of Custom or "buyerBusinessName"
-        
+
         if (data['Location'].trim() != 'Karachi') {
             row.append('<td>' + 'Punjab' + '</td>');    //Province or "buyerProvince"
         }
@@ -152,17 +154,17 @@ function FillDataTable(jsonData) {
         row.append('<td class="registration-cell">Loading...</td>');
         row.attr('data-ntn', buyerNTN);
         const regCell = row.find('.registration-cell');
-        if (buyerNTN !== "") {            
+        if (buyerNTN !== "") {
             // fetchRegistrationTypefromAPI(buyerNTN, registrationCellID);
             fetchRegistrationTypefromAPI(buyerNTN, regCell);
         }
         //#endregion
-        
+
         //#region Seller Information
 
         row.append('<td>1522054</td>');  //Seller NTNCNIC or "sellerNTNCNIC"
-       // row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
-        
+        // row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
+
         if (data['Manufacturer'].trim() == '') {
             row.append('<td>' + 'ZULTEC' + '</td>');    //Province or "buyerProvince"
         }
@@ -176,7 +178,7 @@ function FillDataTable(jsonData) {
         else {
             row.append('<td>' + 'Sindh' + '</td>');    //Province or "buyerProvince"
         }
-        
+
         // let provincesOptions = provincesList.map(s => {
         //     return `<option value="${s.ID}">${s.Value}</option>`;
         // }).join('');
@@ -186,7 +188,7 @@ function FillDataTable(jsonData) {
 
         //#endregion
         row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
-        
+
         //#region HS Code and Unit of measurement work
         const hsCodeCellID = 'hsCode-' + index;
         const uomCellID = 'uom-' + index;
@@ -208,7 +210,7 @@ function FillDataTable(jsonData) {
         row.append('<td id="' + uomCellID + '" class="uom-cell">Loading...</td>');
         // const uomCell = row.find('.uom-cell');
         if (hsValue !== "") {
-            fetchUOMFromAPI(hsValue, uomCellID);            
+            fetchUOMFromAPI(hsValue, uomCellID);
             //fetchUOMFromAPI(hsValue, uomCell);
         } else {
             $('#' + uomCellID).html('');
@@ -221,13 +223,13 @@ function FillDataTable(jsonData) {
         let scenarioOptions = scenariosList.map(s => {
             return `<option value="${s.ID}">${s.Value}</option>`;
         }).join('');
-        row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);        
+        row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
         //#endregion
 
         const rateCellID = 'rate-' + index;
 
         // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
-        
+
         row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
         // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
         const qtyCellID = 'qty-' + index;
@@ -279,7 +281,7 @@ function FillDataTable(jsonData) {
                 const hsCode = $row.attr('data-hs');
             });
         }
-    });    
+    });
     const dropdown = $('.scenario-dropdown').first();
     handleScenarioChange(dropdown, "SN001 - Goods at standard rate (default)");
     const provincesDropdown = $('.provinces-dropdown').first();
@@ -345,7 +347,7 @@ function FillDataTable(jsonData) {
     //#region HS Code input field section
 
     $('#carcassTable tbody').off('click', 'td.editable-hs');
-    $('#carcassTable tbody').on('click', 'td.editable-hs', function () {        
+    $('#carcassTable tbody').on('click', 'td.editable-hs', function () {
         var cell = dt.cell(this);
         var originalValue = cell.data().toString().trim();
         var $td = $(this);
@@ -373,7 +375,7 @@ function FillDataTable(jsonData) {
     //#endregion
 
     //#region Production Qty input field section
-    
+
     $('#carcassTable tbody').off('click', 'td.editable-qty');
     $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
         var cell = dt.cell(this);
@@ -404,7 +406,7 @@ function FillDataTable(jsonData) {
     //#endregion
 
     //#region Rate input field section
-    
+
     $('#carcassTable tbody').off('click', 'td.editable-qty');
     $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
         var cell = dt.cell(this);
@@ -441,14 +443,14 @@ function FillDataTable(jsonData) {
             }
             $td.closest('tr').find('td[id^="salesTax-"]').text(taxAmount.toLocaleString());
             recalculateRow(row.index());
-        
+
         });
     });
-    
+
     //#endregion
 
     // //#region SRO Schedule input field section
-    
+
     // $('#carcassTable tbody').off('click', 'td.editable-qty');
     // $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
     //     var cell = dt.cell(this);
@@ -485,10 +487,10 @@ function FillDataTable(jsonData) {
     //         }
     //         $td.closest('tr').find('td[id^="salesTax-"]').text(taxAmount.toLocaleString());
     //         recalculateRow(row.index());
-        
+
     //     });
     // });
-    
+
     // //#endregion
 
 };
@@ -589,7 +591,7 @@ function createDropdownMenu(data) {
 $(document).on('click', '#printBtn', function PrintQRCode() {
 
     // var api_url = baseURLValue + 'save-qr';
-            
+
     //         var fbr_Invoice_No = $(this).data('id');
     //         var tempDiv = document.createElement("div");
     //         var qrcode = new QRCode(tempDiv, {
@@ -623,7 +625,7 @@ $(document).on('click', '#printBtn', function PrintQRCode() {
     //                 }
     //             })
     //         });        
-    
+
     const fbr_Invoice_No = $(this).data('id');
     if (fbr_Invoice_No != "" && fbr_Invoice_No != undefined) {
         var tempDiv = document.createElement("div");
@@ -725,14 +727,14 @@ $(document).on('click', '#validateBtn', function EditBtn() {
     const rawDataObjects = cleanedRows.map(valuesArr => {
         const obj = {};
         keys.forEach((key, idx) => {
-            
+
             if (idx !== 2 && idx !== 16 && idx !== 18 && idx !== 33) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18, fbr_invoice_no = 33
                 obj[key] = valuesArr[idx];
             }
         });
         return obj;
     });
-    
+
     const groupedByInvoice = {};
     const environmentText = $("#environment").text().trim();
 
@@ -808,7 +810,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
                 const fbrAPIToken = result.token;
                 if (!localStorage.getItem('token')) {
                     window.location.href = baseURLValue;
-                } else {                    
+                } else {
                     finalPayload.forEach((finalPayload, index) => {
                         $.ajax({
                             url: 'https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb',
@@ -819,7 +821,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
                             },
                             data: JSON.stringify(finalPayload),
                             success: function (response) {
-                                
+
                                 if (response.validationResponse.invoiceStatuses == null) {
                                     alert(response.validationResponse.error)
                                 }
@@ -865,7 +867,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
                                 }
                             },
                             error: function (xhr, status, error) {
-                                
+
                                 console.error(`Failed to validate invoice ${finalPayload.invoiceRefNo}`, error);
                                 alert(`Failed to validate invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
                             }
@@ -880,7 +882,7 @@ $(document).on('click', '#validateBtn', function EditBtn() {
             }
         });
     };
-    
+
 });
 
 //#endregion
@@ -925,7 +927,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     $row.find('td').each(function () {
         rowData.push($(this).text().trim());
     });
-    
+
     var invoiceNoIndex = 2;
     var hsCodeIndex = 17;
     var scenarioIndex = 21;
@@ -950,7 +952,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 alertCheck = "HS Code"
                 return false;
             }
-            
+
             // var scenarioText = $(this).find('td').eq(scenarioIndex).find('select option:selected').text().trim();
             // if (!scenarioText) {
             //     invalidRow = $(this);
@@ -975,7 +977,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             matchingRows.find('.row-checkbox').prop('checked', false);
             return;
         }
-		// // Check all matching checkboxes
+        // // Check all matching checkboxes
         // // matchingRows.find('.row-checkbox').each(function () {
         // //     var rowId = $(this).val();
         // //     $(this).prop('checked', true);
@@ -1002,8 +1004,8 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             var taxCharged = parseFloat(rowData[27].replace(/,/g, ""));
             // PRA_selectedRows.push(rowData);
             PRA_selectedRows.push({
-            
-            //#region "Main Data"
+
+                //#region "Main Data"
                 POSID: 821732,      //Generated from PRA Registration Portal
                 USIN: rowData[2],   //Zultec Own Invoice No for Reference No
                 DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
@@ -1020,9 +1022,9 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 PaymentMode: 1,
                 RefUSIN: null,
                 InvoiceType: 1,
-            //#endregion
+                //#endregion
 
-            //#region "Item Data"
+                //#region "Item Data"
                 ItemCode: rowData[4],   //Zultec Item Code
                 ItemName: rowData[6],    //Zultec Item Name
                 Quantity: rowData[23],    //Quantity
@@ -1035,8 +1037,8 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 FurtherTax: 0.0,
                 InvoiceType: 1,
                 RefUSIN: null
-            //#endregion
-            
+                //#endregion
+
             });
             console.log("PRA Selected Rows", PRA_selectedRows);
         } else {
@@ -1090,7 +1092,7 @@ $("#tokenDD").change(function () {
                         tokenKey: "FBR_" + $("#tokenDD").val()
                     };
                 }
-                
+
                 makeApiCall({
                     url: api_url,
                     method: 'POST',
@@ -1105,7 +1107,7 @@ $("#tokenDD").change(function () {
                         } else {
                             $("#tokenValueInputHdn").val(result.token);     //FBR Token for UOM and other value fetching from Portal
                         }
-                        
+
                     },
                     errorCallback: function (xhr, status, error) {
                         console.error("Error:", error);
@@ -1114,7 +1116,7 @@ $("#tokenDD").change(function () {
                     }
                 });
             }
-            
+
 
             // const tokenObj = {
             //     tokenKey: $("#authorityDD").val() + $("#tokenDD").val()
@@ -1165,6 +1167,7 @@ $("#btnSave").click(function SaveEditButton() {
     $("#tokenValueInput").val($("#tokenValue").val());
     localStorage.setItem('pushToken', $("#tokenValueInput").val());
     localStorage.setItem('fetchDataToken', $("#tokenValueInputHdn").val());
+    localStorage.setItem('pushButtonText', $("#authorityDD").val().replace("_", ""))
     $("#carcassModal").modal('hide');
 
 });
@@ -1187,6 +1190,7 @@ $("#searchBtn").click(function () {
     LoadInvoices(fromDateSelect, toDateSelect);
     $("#btnExport").css('display', 'block');
     $("#pushToFBRBtn").css('display', 'block');
+    $("#authorityText").text(localStorage.getItem('pushButtonText'));
 });
 
 //#endregion
@@ -1194,7 +1198,7 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
-    
+
     //#region "Pushing Invoices to PRA"
 
     var PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/production/api/Live/PostData";
@@ -1214,13 +1218,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 var furtherTax = 0.0;
                 var totalBillAmount = 0.0;
                 // for (let index = 0; index < PRA_selectedRows.length; index++) {
-                    totalQuantity += Number(item.Quantity);
-                    totalSaleValue += Number(item.SaleValue);
-                    totalTaxCharged += Number(item.TaxCharged);
-                    discount += Number(item.Discount);
-                    furtherTax += Number(item.FurtherTax);
+                totalQuantity += Number(item.Quantity);
+                totalSaleValue += Number(item.SaleValue);
+                totalTaxCharged += Number(item.TaxCharged);
+                discount += Number(item.Discount);
+                furtherTax += Number(item.FurtherTax);
                 // };
-            
+
                 totalBillAmount = totalSaleValue + totalTaxCharged;
                 groupedByInvoice[invoiceKey] = {
                     InvoiceNumber: "",
@@ -1335,7 +1339,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                             var current_Second = current_DateTime.getSeconds();
 
                                             var final_DateTime = current_Year + "-" + current_Month + "-" + current_Date + " " + current_Hour + ":" + current_Minute + ":" + current_Second + ".000"; //"2026-08-21 12:00:00.000"
-                                            
+
                                             let qrBase64 = "";
                                             let tempDiv = document.createElement("div");
                                             let qrcode = new QRCode(tempDiv, {
@@ -1345,18 +1349,18 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                 correctLevel: QRCode.CorrectLevel.M,
                                                 version: 2
                                             });
-                                            setTimeout(function () {                                            
+                                            setTimeout(function () {
                                                 let img = tempDiv.querySelector("img");
-                                                let canvas = tempDiv.querySelector("canvas");                                        
+                                                let canvas = tempDiv.querySelector("canvas");
                                                 if (img) {
                                                     qrBase64 = img.src;
                                                 } else if (canvas) {
                                                     qrBase64 = canvas.toDataURL("image/png");
-                                                }                                        
+                                                }
                                                 if (!qrBase64) {
                                                     console.error("QR generation failed");
                                                     return;
-                                                }                                        
+                                                }
                                                 const obj = {
                                                     Sopnumbr: PRA_finalPayload.USIN,
                                                     FBR_InvoiceNo: PRA_Invoice_No,
@@ -1368,8 +1372,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     ScenarioDesc: "",
                                                     Environment: environmentText,
                                                     QRImage: qrBase64
-                                                };                                        
-                                                var api_url = baseURLValue + 'InsertFBR_Response';                                        
+                                                };
+                                                var api_url = baseURLValue + 'InsertFBR_Response';
                                                 makeApiCall({
                                                     url: api_url,
                                                     method: 'POST',
@@ -1377,7 +1381,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     data: obj,
                                                     successCallback: function (result) {
                                                         i++;
-                                                        if (i== PRA_totalRows) {
+                                                        if (i == PRA_totalRows) {
                                                             alert("Success: " + result.actualData[0]["Message"]);
                                                             window.location.href = baseURLValue + 'invoices';
                                                             return;
@@ -1387,8 +1391,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                         alert("Bad Request: " + xhr.responseText)
                                                         console.error("Error:", error, xhr.responseText);
                                                     }
-                                                });                                        
-                                            }, 200); 
+                                                });
+                                            }, 200);
                                         }
                                     }
                                 },
@@ -1405,13 +1409,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
                     $("#tokenValue").val("");
                 }
             });
-        };    
+        };
     }
 
     //#endregion
 
     //#region "Pushing Invoices to FBR"
-    
+
     else {
 
         var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
@@ -1432,7 +1436,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
         let cleanedRows = selectedRows.map(row => row.slice(2)); // clean data
         const rawDataObjects = cleanedRows.map(valuesArr => {
             const obj = {};
-            keys.forEach((key, idx) => {            
+            keys.forEach((key, idx) => {
                 if (idx !== 2 && idx !== 16 && idx !== 18 && idx !== 33) { // skip zultecItemNo = 2, hsCode = 16, cateory = 18, fbr_invoice_no = 33
                     obj[key] = valuesArr[idx];
                 }
@@ -1566,18 +1570,18 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                 version: 2
                                             });
                                             setTimeout(function () {
-                                            
+
                                                 let img = tempDiv.querySelector("img");
-                                                let canvas = tempDiv.querySelector("canvas");                                        
+                                                let canvas = tempDiv.querySelector("canvas");
                                                 if (img) {
                                                     qrBase64 = img.src;
                                                 } else if (canvas) {
                                                     qrBase64 = canvas.toDataURL("image/png");
-                                                }                                        
+                                                }
                                                 if (!qrBase64) {
                                                     console.error("QR generation failed");
                                                     return;
-                                                }                                        
+                                                }
                                                 const obj = {
                                                     Sopnumbr: finalPayload.invoiceRefNo,
                                                     FBR_InvoiceNo: fbr_Invoice_No,
@@ -1588,8 +1592,8 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     ScenarioDesc: salesTypeSelected,
                                                     Environment: environmentText,
                                                     QRImage: qrBase64
-                                                };                                        
-                                                var api_url = baseURLValue + 'InsertFBR_Response';                                        
+                                                };
+                                                var api_url = baseURLValue + 'InsertFBR_Response';
                                                 makeApiCall({
                                                     url: api_url,
                                                     method: 'POST',
@@ -1597,15 +1601,15 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     data: obj,
                                                     successCallback: function (result) {
                                                         // if ((i + 1) == totalRows) {
-                                                            alert("Success: " + result.actualData[0]["Message"]);
-                                                            window.location.href = baseURLValue + 'invoices';
+                                                        alert("Success: " + result.actualData[0]["Message"]);
+                                                        window.location.href = baseURLValue + 'invoices';
                                                         // }
                                                     },
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
                                                         console.error("Error:", error, xhr.responseText);
                                                     }
-                                                });                                        
+                                                });
                                             }, 200);
                                         }
                                     }
@@ -1693,7 +1697,7 @@ function LoadProvinces() {
 //#region "Get UOM Against HS Code"
 
 function fetchUOMFromAPI(hsCode, targetCellId) {
-//function fetchUOMFromAPI(hsCode, $cell) {
+    //function fetchUOMFromAPI(hsCode, $cell) {
     // const FBR_token = $("#tokenValueInput").val();
     const FBR_token = $("#tokenValueInputHdn").val();
     if (!localStorage.getItem('token')) {
@@ -1764,7 +1768,7 @@ function fetchRegistrationTypefromAPI(ntn, $cell) {
             successCallback: function (result) {
                 const fbrAPIToken = result.token;
                 var settings = {
-                    "url":'https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type?Registration_No=' + ntn,
+                    "url": 'https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type?Registration_No=' + ntn,
                     "method": "GET",
                     "timeout": 0,
                     "headers": {
@@ -1773,7 +1777,7 @@ function fetchRegistrationTypefromAPI(ntn, $cell) {
                         //   "Cookie": "JSESSIONID=HDCez6mog7ZHkUSj15spUh-g7TiCGto2IHkrziec.i01-irisdmz55; cookiesession1=678B28F2CB763E08E0DF447115BEDAFB"
                     },
                 };
-            
+
                 $.ajax(settings).done(function (response) {
                     const registrationType = response?.REGISTRATION_TYPE ?? 'N/A';
                     // $('#' + targetCellId).text(registrationType);
@@ -1799,7 +1803,7 @@ $(document).on('change', '.scenario-dropdown', function () {
 
 // $(document).on('change', '.scenario-dropdown', function () {
 function handleScenarioChange(dropdown, defaultValue = null) {
-    
+
     // const $dropdown = $(this);
     const $dropdown = $(dropdown);
     const $row = $dropdown.closest('tr');           // Get the parent <tr>
@@ -1809,7 +1813,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
 
     const $rateCell = $row.find('td[id^="rate-"]'); // any td with id like rate-1, rate-2, etc.
     const colRateID = $rateCell.attr('id');            // 'rate-1'
-    
+
     const $netAmountCell = $row.find('td[id^="netAmount-"]');
     const netAmountValue = $netAmountCell.text().trim();      // text inside the cell
 
@@ -1852,7 +1856,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                 const fbrAPIToken = result.token;
                 // You can store this in a variable, update UI, or make an API call, etc.
                 if (scenarioIDSelected != "SN001") {
-                
+
                     var settings = {
                         "url": 'https://gw.fbr.gov.pk/pdi/v1/transtypecode',
                         "method": "GET",
@@ -1862,11 +1866,11 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                             'Authorization': 'Bearer ' + fbrAPIToken.trim()
                         },
                     };
-                
+
                     $.ajax(settings).done(function (transactionTypesResponse) {
                         for (let i = 0; i < transactionTypesResponse.length; i++) {
                             if (transactionTypesResponse[i]['transactioN_DESC'].trim() == salesTypeSelected) {
-                            
+
                                 transactionTypeID = Number(transactionTypesResponse[i]['transactioN_TYPE_ID']);
                                 break;
                             }
@@ -1880,9 +1884,9 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                                 'Authorization': 'Bearer ' + fbrAPIToken.trim()
                             },
                         };
-                    
+
                         $.ajax(settings).done(function (SaleTypeToRateResponse) {
-                        
+
                             if (scenarioIDSelected == "SN005") {    //Goods at Reduced Rate
                                 rate_ID = 109; //Number(SaleTypeToRateResponse[0]['ratE_ID']); 
                                 rate_Desc = "5%"//SaleTypeToRateResponse[0]['ratE_DESC'].trim();
@@ -1907,7 +1911,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                                     }
                                 }
                             }
-                        
+
                             var settings = {
                                 "url": 'https://gw.fbr.gov.pk/pdi/v1/SroSchedule?rate_id=' + rate_ID + '&date=02-Sep-2025&origination_supplier_csv=8',
                                 "method": "GET",
@@ -1918,11 +1922,11 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                                 },
                             };
                             $.ajax(settings).done(function (SroScheduleResponse) {
-                            
+
                                 sro_ID = Number(SroScheduleResponse[0]['srO_ID']);
                                 sro_Desc = SroScheduleResponse[0]['srO_DESC'].trim();
                                 $("#" + colSROSchID).text(sro_Desc);
-                            
+
                                 var settings = {
                                     "url": 'https://gw.fbr.gov.pk/pdi/v2/SROItem?date=2025-09-04&sro_id=' + sro_ID,
                                     "method": "GET",
@@ -1933,7 +1937,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                                     },
                                 };
                                 $.ajax(settings).done(function (SroItemResponse) {
-                                
+
                                     if (scenarioIDSelected == "SN006") {
                                         sro_item_ID = 18130;
                                         sro_item_Desc = "166";
@@ -1945,13 +1949,13 @@ function handleScenarioChange(dropdown, defaultValue = null) {
                                         $("#" + colSROItemSchNoID).text(sro_item_Desc);
                                     }
                                 });
-                            
+
                             });
                         });
                     });
                 }
                 else {
-                
+
                     let rate = "18%"
                     let numberOnly = "18"; // "18"
                     const taxRate = Number(numberOnly); // 18 as number
@@ -1975,7 +1979,7 @@ function handleScenarioChange(dropdown, defaultValue = null) {
         });
     };
 
-// });
+    // });
 };
 
 //#endregion
@@ -1987,7 +1991,7 @@ $(document).on('change', '.provinces-dropdown', function () {
 });
 
 function handleProvinceChange(dropdown, defaultValue = null) {
-    
+
     const $dropdown = $(dropdown);
     let selectedText;
     if (defaultValue) {
@@ -2016,7 +2020,7 @@ $("#btnExport").on("click", function () {
     };
     const dateTime = getCurrentDateTime();
     const fileName = `FBR_Invoices_Export_${dateTime}.xlsx`;
-    exportLimitedColumns('carcassTable', [0,1,3,21,24,28,29,30,31,32,33,35], fileName);
+    exportLimitedColumns('carcassTable', [0, 1, 3, 21, 24, 28, 29, 30, 31, 32, 33, 35], fileName);
 });
 
 function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') {
@@ -2050,7 +2054,7 @@ function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') 
         var rowData = [];
 
         for (let i = 0; i < row.length; i++) {
-            
+
             if (!columnIndexes.includes(i)) {
 
                 let cell = row[i];
@@ -2067,7 +2071,7 @@ function exportLimitedColumns(tableId, columnIndexes, filename = 'export.xlsx') 
                         // Remove commas and any non-numeric characters (except dot & minus)
                         cell = cell.replace(/,/g, '').replace(/[^0-9.-]/g, '');
                     }
-                
+
                     let num = parseFloat(cell);
                     cell = !isNaN(num) ? num : 0;
                 }

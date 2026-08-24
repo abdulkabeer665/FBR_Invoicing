@@ -15,12 +15,16 @@
       padding-left: 15px;
       padding-right: 10px;
       padding-bottom: 10px;
-    };
+    }
+
+    ;
 
     .modal-row {
       padding: 0 !important;
       /* Reset padding for the modal's row */
-    };
+    }
+
+    ;
 
     /* Ensures the button does not have an underline */
     #deleteBtn {
@@ -184,8 +188,7 @@
       <div class="layout-page">
         <!-- Navbar -->
 
-        <nav
-          class="layout-navbar navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
+        <nav class="layout-navbar navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme"
           id="layout-navbar">
           <div class="layout-menu-toggle navbar-nav align-items-xl-center me-4 me-xl-0 d-xl-none">
             <a class="nav-item nav-link px-0 me-xl-6" href="javascript:void(0)">
@@ -215,12 +218,12 @@
                 <label for="fromDate" class="form-label">From Date:<span style="color: red;">*</span></label>
                 <input type="date" name="fromDate" class="form-control" id="fromDate" />
               </div>
-            
+
               <div class="col mb-4">
                 <label for="toDate" class="form-label">To Date:<span style="color: red;">*</span></label>
                 <input type="date" name="toDate" class="form-control" id="toDate" />
               </div>
-            
+
               <div class="col mb-4 d-flex align-items-end">
                 <button type="button" class="btn btn-primary" id="searchBtn">
                   Search <i class="bx bx-search-alt me-1" style="margin-left: 7px; font-size: 16px;"></i>
@@ -233,8 +236,10 @@
               <div class="table-responsive text-nowrap">
                 <!-- Add button at the top -->
                 <div class="mb-3" style="float: right; padding-top: 10px; padding-right: 10px;">
-                  <button type="button" class="btn btn-primary" style="margin-right: 20px; display: none !important;" id="pushToFBRBtn">
-                    Push to <span id="authorityText">FBR</span> <i class="bx bx-export me-1" style="margin-left: 3px; font-size: 18px;"></i>
+                  <button type="button" class="btn btn-primary" id="pushToFBRBtn"
+                    style="margin-right: 20px; display: none !important;">
+                    Push to&nbsp;<span id="authorityText"></span>
+                    <i class="bx bx-export me-1" style="margin-left: 3px; font-size: 18px;"></i>
                   </button>
                   <button class="btn btn-success" style="display: none !important;" type="button" id="btnExport">
                     Export to Excel <i class="bx bx-table me-1" style="margin-left: 3px; font-size: 18px;"></i>
@@ -317,7 +322,8 @@
                     <div class="modal-body" style="margin-top: -20px;">
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
-                          <label for="authorityDD" class="form-label">Tax Authority:<span style="color: red;"> *</span></label>
+                          <label for="authorityDD" class="form-label">Tax Authority:<span style="color: red;">
+                              *</span></label>
                           <select name="authorityDD" class="form-control" id="authorityDD">
                             <option value="select">Select Tax Authority</option>
                             <option value="FBR_"><b>FBR</b> - Federal Board of Revenue</option>
@@ -327,7 +333,8 @@
                       </div>
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
-                          <label for="tokenDD" class="form-label">Environment:<span style="color: red;"> *</span></label>
+                          <label for="tokenDD" class="form-label">Environment:<span style="color: red;">
+                              *</span></label>
                           <select name="tokenDD" class="form-control" id="tokenDD" disabled>
                             <option value="select">Select Environment</option>
                             <option value="pushInvoiceToSandboxToken">Sandbox Environment</option>
@@ -338,7 +345,7 @@
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
                           <label for="tokenValue" class="form-label">Token:</label>
-                          <input type="password" name="tokenValue" id="tokenValue" class="form-control" disabled/>
+                          <input type="password" name="tokenValue" id="tokenValue" class="form-control" disabled />
                         </div>
                       </div>
                       <!-- Loader added below the input fields -->
