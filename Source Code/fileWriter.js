@@ -6,7 +6,9 @@ async function writeInvoicePayloadToFile(finalPayload) {
         throw new Error('finalPayload is empty');
     }
 
-    const invoiceRefNo = finalPayload[0].invoiceRefNo;
+    // const invoiceRefNo = finalPayload[0].invoiceRefNo;
+
+    const invoiceRefNo = finalPayload.find(item => item.invoiceRefNo)?.invoiceRefNo || finalPayload.find(item => item.USIN)?.USIN;
 
     const now = new Date();
     const formattedDate =
