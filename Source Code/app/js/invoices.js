@@ -8,11 +8,20 @@ var selectedIds = [];
 selectedRows = [];
 let PRA_selectedRows = [];
 let scenariosList = []; // Global variable to hold scenario data
-let provincesList = []; // Global variable to hold scenario data
+let provincesList = []; // Global variable to hold province data
+let paymentTypeList = []; // Global variable to hold payment type data
+let invoiceTypeList = []; // Global variable to hold invoice type data
 let scenarioIDSelected = "";
 let scenarioIDSelectedCheckbox = "";
 let provinceSelected = "";
 let salesTypeSelected = "";
+
+let paymentTypeCodeSelected = "";
+let paymentType = "";
+
+let invoiceTypeCodeSelected = "";
+let invoiceType = "";
+
 let salesTypeSelectedCheckbox = "";
 let salesTypeSelectedArr = [];
 let salesTypeSelectedArrCheckbox = [];
@@ -38,6 +47,8 @@ $(document).ready(function () {
     $("#carcassModalTitleText").text('Environment');
     LoadScenarios();
     LoadProvinces();
+    LoadPaymentTypes();
+    LoadInvoiceTypes();
     $("#environment").text(localStorage.getItem('environmentName'));
     if (localStorage.getItem('pushToken') == null || localStorage.getItem('pushToken') == "") {
         $("#carcassModal").modal('show');
@@ -90,6 +101,7 @@ function LoadInvoices(frmDate, toDate) {
 };
 
 //#region "Fill DataTable"
+
 function FillDataTable(jsonData) {
     var table = $("#" + 'carcassTable');
     var tbody = table.find('tbody');
@@ -137,6 +149,7 @@ function FillDataTable(jsonData) {
         row.append('<td>' + data['Item Description'].trim() + '</td>'); //Item Description or "productDescription"
 
         //#region Buyer Information
+
         const buyerNTN = data['NTN#'].trim().split('-')[0];
         row.append('<td>' + buyerNTN + '</td>'); //Customer NTN# or "buyerNTNCNIC"
         row.append('<td>' + data['Customer Name'].trim() + '</td>');    //Name of Custom or "buyerBusinessName"
@@ -158,6 +171,7 @@ function FillDataTable(jsonData) {
             // fetchRegistrationTypefromAPI(buyerNTN, registrationCellID);
             fetchRegistrationTypefromAPI(buyerNTN, regCell);
         }
+
         //#endregion
 
         //#region Seller Information
@@ -187,6 +201,7 @@ function FillDataTable(jsonData) {
         row.append('<td>Korangi</td>');  //Seller Address or "sellerAddress"
 
         //#endregion
+        
         row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
 
         //#region HS Code and Unit of measurement work
@@ -217,13 +232,38 @@ function FillDataTable(jsonData) {
         }
 
         //#endregion
-        row.append('<td>' + data['Category'] + '</td>');
+        
+        //#region "Category / Invoice Types distinguishing"
 
-        //#region "Scenario Dropdown"
-        let scenarioOptions = scenariosList.map(s => {
-            return `<option value="${s.ID}">${s.Value}</option>`;
-        }).join('');
-        row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
+        // if (data["Tax Schedule ID"].split(" ")[1].includes("16%")) {
+        if (data["Category"].trim() == "GST") {
+            let invoiceTypesOptions = invoiceTypeList.map(s => {
+                return `<option value="${s.ID}">${s.Value}</option>`;
+            }).join('');
+            row.append(`<td><select class="form-control invoiceType-dropdown">${invoiceTypesOptions}</select></td>`);
+        }
+        else {
+            row.append('<td>' + data['Category'] + '</td>');
+        }
+
+        //#endregion
+        
+        //#region "Scenario / Payment Types Dropdown distinguishing"
+
+        // if (data["Tax Schedule ID"].split(" ")[1].includes("16%")) {
+        if (data["Category"].trim() == "GST") {
+            let paymentTypesOptions = paymentTypeList.map(s => {
+                return `<option value="${s.ID}">${s.Value}</option>`;
+            }).join('');
+            row.append(`<td><select class="form-control paymentType-dropdown">${paymentTypesOptions}</select></td>`);
+        }
+        else {            
+            let scenarioOptions = scenariosList.map(s => {
+                return `<option value="${s.ID}">${s.Value}</option>`;
+            }).join('');
+            row.append(`<td><select class="form-control scenario-dropdown">${scenarioOptions}</select></td>`);
+        }
+
         //#endregion
 
         const rateCellID = 'rate-' + index;
@@ -286,6 +326,10 @@ function FillDataTable(jsonData) {
     handleScenarioChange(dropdown, "SN001 - Goods at standard rate (default)");
     const provincesDropdown = $('.provinces-dropdown').first();
     handleProvinceChange(provincesDropdown, "AZAD JAMMU AND KASHMIR");
+    const paymentTypesdropdown = $('.paymentType-dropdown').first();
+    handlePaymentTypeChange(paymentTypesdropdown, "1 - Cash");
+    const invoiceTypesdropdown = $('.invoiceType-dropdown').first();
+    handleInvoiceTypeChange(invoiceTypesdropdown, "1 - New");
 
     //#region Net Amount input field section
     $('#carcassTable tbody').off('click', 'td.editable'); // prevent duplicate binding
@@ -1019,7 +1063,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 TotalTaxCharged: 0.0,
                 Discount: 0.0,
                 FurtherTax: 0.0,
-                PaymentMode: 1,
+                PaymentMode: paymentTypeCodeSelected,
                 RefUSIN: null,
                 InvoiceType: 1,
                 //#endregion
@@ -1654,9 +1698,6 @@ function LoadScenarios() {
             data: {}, // You can pass any data you want to send
             successCallback: function (result) {
                 scenariosList = result.actualData || [];
-                // // Add default "Select Scenario" option at the beginning
-                // scenariosList.unshift({ ID: 0, Value: 'Select Scenario' });
-                // FillDropDown('scenariosDD', 'Select Scenario', result.actualData);
                 FillDropDown('scenariosDD', '', result.actualData);
             },
             errorCallback: function (xhr, status, error) {
@@ -1689,6 +1730,62 @@ function LoadProvinces() {
                 console.error("Error:", error);
             }
         });
+    }
+};
+
+//#endregion
+
+//#region "Load Payment Types"
+
+function LoadPaymentTypes() {
+
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+    } else {
+
+        var api_url = baseURLValue + 'getPaymentTypes';
+        makeApiCall({
+            url: api_url,
+            method: 'GET',
+            token: token,
+            data: {}, // You can pass any data you want to send
+            successCallback: function (result) {
+                paymentTypeList = result.actualData || [];
+                FillDropDown('paymentTypesDD', '', result.actualData);
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+
+    }
+};
+
+//#endregion
+
+//#region "Load Invoice Types"
+
+function LoadInvoiceTypes() {
+
+    if (!localStorage.getItem('token')) {
+        window.location.href = baseURLValue;
+    } else {
+
+        var api_url = baseURLValue + 'getInvoiceTypes';
+        makeApiCall({
+            url: api_url,
+            method: 'GET',
+            token: token,
+            data: {}, // You can pass any data you want to send
+            successCallback: function (result) {
+                invoiceTypeList = result.actualData || [];
+                FillDropDown('invoiceTypesDD', '', result.actualData);
+            },
+            errorCallback: function (xhr, status, error) {
+                console.error("Error:", error);
+            }
+        });
+
     }
 };
 
@@ -2000,6 +2097,50 @@ function handleProvinceChange(dropdown, defaultValue = null) {
         selectedText = $dropdown.find('option:selected').text();
     }
     provinceSelected = selectedText;
+};
+
+//#endregion
+
+//#region "Payment Type Dropdown change"
+
+$(document).on('change', '.paymentType-dropdown', function () {
+    handlePaymentTypeChange(this);
+});
+
+function handlePaymentTypeChange(dropdown, defaultValue = null) {
+    const $dropdown = $(dropdown);
+    let selectedText;
+    if (defaultValue) {
+        selectedText = defaultValue;
+    } else {
+        selectedText = $dropdown.find('option:selected').text();
+    }
+
+    paymentTypeCodeSelected = Number(selectedText.split(" - ")[0].trim());
+    paymentType = selectedText.split(" - ")[1].trim();
+    
+};
+
+//#endregion
+
+//#region "Invoice Type Dropdown change"
+
+$(document).on('change', '.invoiceType-dropdown', function () {
+    handleInvoiceTypeChange(this);
+});
+
+function handleInvoiceTypeChange(dropdown, defaultValue = null) {
+    const $dropdown = $(dropdown);
+    let selectedText;
+    if (defaultValue) {
+        selectedText = defaultValue;
+    } else {
+        selectedText = $dropdown.find('option:selected').text();
+    }
+
+    invoiceTypeCodeSelected = Number(selectedText.split(" - ")[0].trim());
+    invoiceType = selectedText.split(" - ")[1].trim();
+    
 };
 
 //#endregion

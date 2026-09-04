@@ -16,10 +16,11 @@ const { writeInvoicePayloadToFile } = require('../fileWriter');
 const { getToken } = require('../tokenUtils'); // Import the utility function
 const { encryptData, decryptData } = require('../encryptDecrypt');
 
-//const SP_Sales_Report = "[dbo].[sp_zul_Sales_Report]";
 const SP_Sales_Report = "[dbo].[SP_GetDataOfInvoices]";
 const SP_GetScenarios = "[dbo].[SP_GetScenarios]";
 const SP_GetProvinces = "[dbo].[SP_GetProvinces]";
+const SP_GetPaymentTypes = "[dbo].[SP_GetPaymentTypes]";
+const SP_GetInvoiceTypes = "[dbo].[SP_GetInvoiceTypes]";
 const SP_ZUL_Insert_FBR_Invoice_Response = "[dbo].[sp_zul_Insert_FBR_Invoice_Response]";
 
 //#endregion
@@ -40,6 +41,129 @@ router.get('/getScenarios', verifyToken, (req, res) => {
 
             const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
             mssql_request.execute(SP_GetScenarios).then(function (dataset) {
+                if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
+                    authData.iat = new Date(authData.iat * 1000).toLocaleString();
+                    authData.exp = new Date(authData.exp * 1000).toLocaleString();
+                    res.status(200).send({
+                        actualData: dataset.recordset,
+                        authData,
+                    });
+                } else {
+                    res.status(404).send("No data found.");
+                }
+            }).catch(function (err) {
+                res.status(400).send("Error executing stored procedure: " + err.message);
+            });
+
+        } catch (err) {
+            res.status(500).send({
+                message: "Database connection failed",
+                error: err.message,
+            });
+        }
+     });
+});
+
+//#endregion
+
+//#region "Get Provinces"
+
+router.get('/getProvinces', verifyToken, (req, res) => {
+    jwt.verify(req.token, secretKey, async (err, authData) => {
+        if (err) {
+            return res.status(400).send({
+                result: 'Invalid Token',
+            });
+        }
+
+        try {
+            // Use the generic function to get a connection to the transactionDb
+            const pool = await getDbConnection('loginDb');
+
+            const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
+            mssql_request.execute(SP_GetProvinces).then(function (dataset) {
+                if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
+                    authData.iat = new Date(authData.iat * 1000).toLocaleString();
+                    authData.exp = new Date(authData.exp * 1000).toLocaleString();
+                    res.status(200).send({
+                        actualData: dataset.recordset,
+                        authData,
+                    });
+                } else {
+                    res.status(404).send("No data found.");
+                }
+            }).catch(function (err) {
+                res.status(400).send("Error executing stored procedure: " + err.message);
+            });
+
+        } catch (err) {
+            res.status(500).send({
+                message: "Database connection failed",
+                error: err.message,
+            });
+        }
+     });
+});
+
+//#endregion
+
+//#region "Get Payment Types"
+
+router.get('/getPaymentTypes', verifyToken, (req, res) => {
+    jwt.verify(req.token, secretKey, async (err, authData) => {
+        if (err) {
+            return res.status(400).send({
+                result: 'Invalid Token',
+            });
+        }
+
+        try {
+            // Use the generic function to get a connection to the transactionDb
+            const pool = await getDbConnection('loginDb');
+
+            const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
+            mssql_request.execute(SP_GetPaymentTypes).then(function (dataset) {
+                if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
+                    authData.iat = new Date(authData.iat * 1000).toLocaleString();
+                    authData.exp = new Date(authData.exp * 1000).toLocaleString();
+                    res.status(200).send({
+                        actualData: dataset.recordset,
+                        authData,
+                    });
+                } else {
+                    res.status(404).send("No data found.");
+                }
+            }).catch(function (err) {
+                res.status(400).send("Error executing stored procedure: " + err.message);
+            });
+
+        } catch (err) {
+            res.status(500).send({
+                message: "Database connection failed",
+                error: err.message,
+            });
+        }
+     });
+});
+
+//#endregion
+
+//#region "Get Invoice Types"
+
+router.get('/getInvoiceTypes', verifyToken, (req, res) => {
+    jwt.verify(req.token, secretKey, async (err, authData) => {
+        if (err) {
+            return res.status(400).send({
+                result: 'Invalid Token',
+            });
+        }
+
+        try {
+            // Use the generic function to get a connection to the transactionDb
+            const pool = await getDbConnection('loginDb');
+
+            const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
+            mssql_request.execute(SP_GetInvoiceTypes).then(function (dataset) {
                 if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
                     authData.iat = new Date(authData.iat * 1000).toLocaleString();
                     authData.exp = new Date(authData.exp * 1000).toLocaleString();
@@ -281,47 +405,6 @@ router.post('/save-qr', async (req, res) => {
         });
 
     });
-});
-
-//#endregion
-
-//#region "Get Provinces"
-
-router.get('/getProvinces', verifyToken, (req, res) => {
-    jwt.verify(req.token, secretKey, async (err, authData) => {
-        if (err) {
-            return res.status(400).send({
-                result: 'Invalid Token',
-            });
-        }
-
-        try {
-            // Use the generic function to get a connection to the transactionDb
-            const pool = await getDbConnection('loginDb');
-
-            const mssql_request = new mssql.Request(pool);  // Pass the connection pool to the request
-            mssql_request.execute(SP_GetProvinces).then(function (dataset) {
-                if (dataset && dataset.recordsets && dataset.recordsets.length > 0) {
-                    authData.iat = new Date(authData.iat * 1000).toLocaleString();
-                    authData.exp = new Date(authData.exp * 1000).toLocaleString();
-                    res.status(200).send({
-                        actualData: dataset.recordset,
-                        authData,
-                    });
-                } else {
-                    res.status(404).send("No data found.");
-                }
-            }).catch(function (err) {
-                res.status(400).send("Error executing stored procedure: " + err.message);
-            });
-
-        } catch (err) {
-            res.status(500).send({
-                message: "Database connection failed",
-                error: err.message,
-            });
-        }
-     });
 });
 
 //#endregion
