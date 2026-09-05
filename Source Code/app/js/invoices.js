@@ -980,7 +980,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     var alertCheck = "";
 
     var scenarioDescCheck;
-
+    
     // Find all rows with same invoice number
     var matchingRows = $('#carcassTable tbody tr').filter(function () {
         return $(this).find('td').eq(invoiceNoIndex).text().trim() === invoiceNo;
@@ -1046,10 +1046,10 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
         if (rowData[22] == "16%") {
             var saleValue = parseFloat(rowData[25].replace(/,/g, ""));
             var taxCharged = parseFloat(rowData[27].replace(/,/g, ""));
-            // PRA_selectedRows.push(rowData);
             PRA_selectedRows.push({
 
                 //#region "Main Data"
+
                 POSID: 821732,      //Generated from PRA Registration Portal
                 USIN: rowData[2],   //Zultec Own Invoice No for Reference No
                 DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
@@ -1065,10 +1065,12 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 FurtherTax: 0.0,
                 PaymentMode: paymentTypeCodeSelected,
                 RefUSIN: null,
-                InvoiceType: 1,
+                InvoiceType: invoiceTypeCodeSelected,
+
                 //#endregion
 
                 //#region "Item Data"
+
                 ItemCode: rowData[4],   //Zultec Item Code
                 ItemName: rowData[6],    //Zultec Item Name
                 Quantity: rowData[23],    //Quantity
@@ -1079,8 +1081,9 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
                 TaxCharged: taxCharged,
                 Discount: 0.0,
                 FurtherTax: 0.0,
-                InvoiceType: 1,
+                InvoiceTypeItem: 1,
                 RefUSIN: null
+
                 //#endregion
 
             });
@@ -1302,7 +1305,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 TaxCharged: item.TaxCharged,
                 Discount: item.Discount,
                 FurtherTax: item.FurtherTax,
-                InvoiceType: item.InvoiceType,
+                InvoiceType: item.InvoiceTypeItem,
                 RefUSIN: item.RefUSIN,
             });
         });
@@ -1685,11 +1688,9 @@ $("#pushToFBRBtn").click(function AddBtn() {
 //#region "Load Scenarios"
 
 function LoadScenarios() {
-
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
     } else {
-
         var api_url = baseURLValue + 'getScenarios';
         makeApiCall({
             url: api_url,
@@ -1704,7 +1705,6 @@ function LoadScenarios() {
                 console.error("Error:", error);
             }
         });
-
     }
 };
 
@@ -1738,11 +1738,9 @@ function LoadProvinces() {
 //#region "Load Payment Types"
 
 function LoadPaymentTypes() {
-
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
     } else {
-
         var api_url = baseURLValue + 'getPaymentTypes';
         makeApiCall({
             url: api_url,
@@ -1757,7 +1755,6 @@ function LoadPaymentTypes() {
                 console.error("Error:", error);
             }
         });
-
     }
 };
 
@@ -1766,11 +1763,9 @@ function LoadPaymentTypes() {
 //#region "Load Invoice Types"
 
 function LoadInvoiceTypes() {
-
     if (!localStorage.getItem('token')) {
         window.location.href = baseURLValue;
     } else {
-
         var api_url = baseURLValue + 'getInvoiceTypes';
         makeApiCall({
             url: api_url,
@@ -1785,7 +1780,6 @@ function LoadInvoiceTypes() {
                 console.error("Error:", error);
             }
         });
-
     }
 };
 
