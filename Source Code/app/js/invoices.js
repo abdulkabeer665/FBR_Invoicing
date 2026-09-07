@@ -1049,8 +1049,8 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             PRA_selectedRows.push({
 
                 //#region "Main Data"
-
-                POSID: 821732,      //Generated from PRA Registration Portal
+// POSID: 821732,
+                POSID: 198791,      //Generated from PRA Registration Portal
                 USIN: rowData[2],   //Zultec Own Invoice No for Reference No
                 DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
                 BuyerPNTN: rowData[7],   //Buyer's NTN Registration No.
