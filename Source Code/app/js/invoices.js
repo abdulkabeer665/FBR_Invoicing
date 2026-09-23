@@ -1246,6 +1246,9 @@ $("#searchBtn").click(function () {
 
 $("#pushToFBRBtn").click(function AddBtn() {
 
+    // Show full-page loader
+    $("#pageLoader").addClass("show");
+
     //#region "Pushing Invoices to PRA"
 
     var PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/production/api/Live/PostData";
@@ -1327,6 +1330,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
             errorCallback: function (xhr, status, error) {
                 alert("Bad Request: " + xhr.responseText)
                 console.error("Error:", error, xhr.responseText);
+                $("#pageLoader").removeClass("show");
             }
         });
 
@@ -1364,10 +1368,12 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                 data: JSON.stringify(PRA_finalPayload),
                                 success: function (response) {
                                     if (response.Code == null || response.Code == "") {
-                                        alert(response.validationResponse.error)
+                                        alert(response.validationResponse.error);
+                                        $("#pageLoader").removeClass("show");
                                     }
                                     else if (!response.Response.includes("successfully")) {
-                                        alert(response.validationResponse.invoiceStatuses[0]['error'])
+                                        alert(response.validationResponse.invoiceStatuses[0]['error']);
+                                        $("#pageLoader").removeClass("show");
                                     }
                                     else {
                                         if (!localStorage.getItem('token')) {
@@ -1430,6 +1436,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                         i++;
                                                         if (i == PRA_totalRows) {
                                                             alert("Success: " + result.actualData[0]["Message"]);
+                                                            $("#pageLoader").removeClass("show");
                                                             window.location.href = baseURLValue + 'invoices';
                                                             return;
                                                         }
@@ -1437,6 +1444,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
                                                         console.error("Error:", error, xhr.responseText);
+                                                        $("#pageLoader").removeClass("show");
                                                     }
                                                 });
                                             }, 200);
@@ -1446,6 +1454,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                 error: function (xhr, status, error) {
                                     console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
                                     alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                                    $("#pageLoader").removeClass("show");
                                 }
                             });
                         });
@@ -1454,6 +1463,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 errorCallback: function (xhr, status, error) {
                     console.error("Error:", error);
                     $("#tokenValue").val("");
+                    $("#pageLoader").removeClass("show");
                 }
             });
         };

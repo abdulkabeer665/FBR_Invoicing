@@ -95,9 +95,67 @@
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
+  <style>
+    .page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* Faded background */
+    background: rgba(0, 0, 0, 0.45);
+    
+    /* Above everything */
+    z-index: 99999;
+
+    /* Center loader */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Hidden initially */
+    visibility: hidden;
+    opacity: 0;
+
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.page-loader.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+.loader-content {
+    background: white;
+    padding: 25px 35px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+}
+
+.loader-text {
+    margin-top: 12px;
+    font-size: 15px;
+    color: #333;
+}
+
+  </style>
+
 </head>
 
 <body>
+
+  <!-- Full Page Loader -->
+<div id="pageLoader" class="page-loader">
+    <div class="loader-content">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="loader-text">Processing...</div>
+    </div>
+</div>
+
   <input type="hidden" id="tokenValueInput" />
   <input type="hidden" id="tokenValueInputHdn" />
   <!-- Layout wrapper -->
@@ -315,15 +373,13 @@
                   <div class="modal-content">
                     <div class="modal-header">
                       <h5 class="modal-title" id="carcassModalTitleText"></h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-                        id="crossBtn"></button>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="crossBtn"></button>
                     </div>
                     <hr />
                     <div class="modal-body" style="margin-top: -20px;">
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
-                          <label for="authorityDD" class="form-label">Tax Authority:<span style="color: red;">
-                              *</span></label>
+                          <label for="authorityDD" class="form-label">Tax Authority:<span style="color: red;"> *</span></label>
                           <select name="authorityDD" class="form-control" id="authorityDD">
                             <option value="select">Select Tax Authority</option>
                             <option value="FBR_"><b>FBR</b> - Federal Board of Revenue</option>
@@ -333,8 +389,7 @@
                       </div>
                       <div class="row g-6" style="padding: 0px;"> <!-- Add the custom class here -->
                         <div class="col mb-6">
-                          <label for="tokenDD" class="form-label">Environment:<span style="color: red;">
-                              *</span></label>
+                          <label for="tokenDD" class="form-label">Environment:<span style="color: red;"> *</span></label>
                           <select name="tokenDD" class="form-control" id="tokenDD" disabled>
                             <option value="select">Select Environment</option>
                             <option value="pushInvoiceToSandboxToken">Sandbox Environment</option>
