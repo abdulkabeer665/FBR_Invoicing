@@ -268,9 +268,9 @@ function FillDataTable(jsonData) {
 
         const rateCellID = 'rate-' + index;
 
-        // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
+        row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
 
-        row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
+        // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
         // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
         const qtyCellID = 'qty-' + index;
         row.append('<td id="' + qtyCellID + '" class="editable-qty" style="text-align:right; cursor:pointer;">' + Number(data['Qty']).toLocaleString() + '</td>');
@@ -1049,7 +1049,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
             PRA_selectedRows.push({
 
                 //#region "Main Data"
-// POSID: 821732,
+                // POSID: 821732,
                 POSID: 198791,      //Generated from PRA Registration Portal
                 USIN: rowData[2],   //Zultec Own Invoice No for Reference No
                 DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
@@ -1139,14 +1139,12 @@ $("#tokenDD").change(function () {
                         tokenKey: "FBR_" + $("#tokenDD").val()
                     };
                 }
-
                 makeApiCall({
                     url: api_url,
                     method: 'POST',
                     token: token,
                     data: tokenObj, // You can pass any data you want to send
                     successCallback: function (result) {
-                        debugger
                         if (b == 0) {
                             $("#tokenValue").val(result.token);     //Actual Environment Token
                             $("#tokenValueInput").val(result.token);     //Actual Environment Token
@@ -1245,7 +1243,7 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
-
+debugger
     // Show full-page loader
     $("#pageLoader").addClass("show");
 
