@@ -117,13 +117,6 @@ function FillDataTable(jsonData) {
         var icon = '';
         var color = '';
 
-        // if (status === 'Un-Posted') {
-        //     icon = '&#10006;'; // ✗ cross
-        //     color = 'red';
-        // } else if (status === 'Posted') {
-        //     icon = '&#10004;'; // ✓ tick
-        //     color = 'green';
-        // }
         if (data["FBR_Invoice_No"] == "" || data["FBR_Invoice_No"] == null) {
             icon = '&#10006;'; // ✗ cross
             color = 'red';
@@ -269,8 +262,8 @@ function FillDataTable(jsonData) {
         const rateCellID = 'rate-' + index;
 
         row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
-
         // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
+
         // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
         const qtyCellID = 'qty-' + index;
         row.append('<td id="' + qtyCellID + '" class="editable-qty" style="text-align:right; cursor:pointer;">' + Number(data['Qty']).toLocaleString() + '</td>');
@@ -285,7 +278,7 @@ function FillDataTable(jsonData) {
             let numberOnly = value.match(/\d+/)[0]; // "18"
             let taxRate = Number(numberOnly); // 18 as number
             let netAmount = Number(data["Net Amount"]); // e.g., 100
-            let taxAmount = (netAmount * taxRate) / 100;
+            let taxAmount = ((netAmount * taxRate) / 100).toFixed(2);
             //row.append('<td id="' + salesTaxCellID + '" style="text-align: right;">' + Number(taxAmount).toLocaleString() + '</td>');  //Sales Tax Applicable or "salesTaxApplicable"
             row.append('<td id="' + salesTaxCellID + '" class="editable-tax" style="text-align: right; cursor:pointer;">' + Number(taxAmount).toLocaleString() + '</td>');
         }
@@ -971,7 +964,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     $row.find('td').each(function () {
         rowData.push($(this).text().trim());
     });
-
+debugger
     var invoiceNoIndex = 2;
     var hsCodeIndex = 17;
     var scenarioIndex = 21;
@@ -1243,7 +1236,7 @@ $("#searchBtn").click(function () {
 //#region "Push to FBR button click"
 
 $("#pushToFBRBtn").click(function AddBtn() {
-debugger
+
     // Show full-page loader
     $("#pageLoader").addClass("show");
 
@@ -1251,6 +1244,21 @@ debugger
 
     var PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/production/api/Live/PostData";
     const environmentText = $("#environment").text().trim();
+    const exists_PRA_Invoice = PRA_selectedRows.some(row => Object.prototype.hasOwnProperty.call(row, "POSID"));
+    const exists_FBR_Invoice = selectedRows.some(row => Object.prototype.hasOwnProperty.call(row, "POSID"));
+
+    if (exists_PRA_Invoice && environmentText.includes("FBR")) {
+        alert("Unable to push the invoice. Environment is set FBR and pushing invoice to PRA.");
+        $("#pageLoader").removeClass("show");
+        return;
+    };
+
+    if (exists_FBR_Invoice && environmentText.includes("PRA")) {
+        alert("Unable to push the invoice. Environment is set PRA and pushing invoice to FBR.");
+        $("#pageLoader").removeClass("show");
+        return;
+    };
+
     if (environmentText.includes("PRA")) {
         if (environmentText.includes("Sandbox")) {
             PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/sandbox/api/Live/PostData";
@@ -1350,7 +1358,12 @@ debugger
                 token: token,
                 data: tokenObj,
                 successCallback: function (result) {
-                    const fbrAPIToken = result.token;
+                    debugger
+                    const fbrAPIToken = result.token.split(" - ")[0];
+                    const POSID = result.token.split(" - ")[1];
+                    PRA_finalPayload.forEach(item => {
+                        item["POSID"] = POSID;
+                    });
                     if (!localStorage.getItem('token')) {
                         window.location.href = baseURLValue;
                     } else {
@@ -1476,6 +1489,7 @@ debugger
         var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
         if (selectedRows.length === 0) {
             alert("Please select an invoice to push.");
+            $("#pageLoader").removeClass("show");
             return;
         }
         var keys = [
@@ -1567,6 +1581,7 @@ debugger
             errorCallback: function (xhr, status, error) {
                 alert("Bad Request: " + xhr.responseText)
                 console.error("Error:", error, xhr.responseText);
+                $("#pageLoader").removeClass("show");
             }
         });
 
@@ -1603,10 +1618,12 @@ debugger
                                 data: JSON.stringify(finalPayload),
                                 success: function (response) {
                                     if (response.validationResponse.invoiceStatuses == null) {
-                                        alert(response.validationResponse.error)
+                                        alert(response.validationResponse.error);
+                                        $("#pageLoader").removeClass("show");
                                     }
                                     else if (response.validationResponse.status == "Invalid") {
-                                        alert(response.validationResponse.invoiceStatuses[0]['error'])
+                                        alert(response.validationResponse.invoiceStatuses[0]['error']);
+                                        $("#pageLoader").removeClass("show");
                                     }
                                     else {
                                         if (!localStorage.getItem('token')) {
@@ -1635,6 +1652,7 @@ debugger
                                                 }
                                                 if (!qrBase64) {
                                                     console.error("QR generation failed");
+                                                    $("#pageLoader").removeClass("show");
                                                     return;
                                                 }
                                                 const obj = {
@@ -1656,6 +1674,7 @@ debugger
                                                     data: obj,
                                                     successCallback: function (result) {
                                                         // if ((i + 1) == totalRows) {
+                                                        $("#pageLoader").removeClass("show");
                                                         alert("Success: " + result.actualData[0]["Message"]);
                                                         window.location.href = baseURLValue + 'invoices';
                                                         // }
@@ -1663,6 +1682,7 @@ debugger
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
                                                         console.error("Error:", error, xhr.responseText);
+                                                        $("#pageLoader").removeClass("show");
                                                     }
                                                 });
                                             }, 200);
@@ -1672,6 +1692,7 @@ debugger
                                 error: function (xhr, status, error) {
                                     console.error(`Failed to push invoice ${finalPayload.invoiceRefNo}`, error);
                                     alert(`Failed to push invoice ${finalPayload.invoiceRefNo}. Check console for details.`);
+                                    $("#pageLoader").removeClass("show");
                                 }
 
                             });
@@ -1681,6 +1702,7 @@ debugger
                 errorCallback: function (xhr, status, error) {
                     console.error("Error:", error);
                     $("#tokenValue").val("");
+                    $("#pageLoader").removeClass("show");
                 }
             });
         };
@@ -1689,7 +1711,6 @@ debugger
     //#endregion
 
 });
-
 
 //#endregion
 
