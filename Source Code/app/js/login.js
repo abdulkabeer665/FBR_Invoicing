@@ -1,6 +1,6 @@
 
 $("#loginBtn").click(function (event) {
-    
+
     event.preventDefault(); // Prevent the form from submitting and the page from reloading
 
     if ($("#email").val() == "" || $("#password").val() == "") {    // Check if email or password fields are empty
@@ -11,7 +11,6 @@ $("#loginBtn").click(function (event) {
             "email": $("#email").val().toLowerCase(),
             "password": $("#password").val()
         };
-
         var api_url = baseURL + 'login';
         $.ajax({
             type: "POST",
