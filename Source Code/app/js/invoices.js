@@ -154,7 +154,6 @@ function FillDataTable(jsonData) {
             row.append('<td>' + 'Sindh' + '</td>');    //Province or "buyerProvince"
         }
         row.append('<td>' + data['Location'].trim() + '</td>'); //Location/Station or "buyerAddress"
-        // row.append('<td>Registered</td>'); //Buyer Registration Type or "buyerRegistrationType"
         const registrationCellID = 'reg-' + index;
         // row.append('<td id="' + registrationCellID + '">Loading...</td>')
         row.append('<td class="registration-cell">Loading...</td>');
@@ -170,7 +169,6 @@ function FillDataTable(jsonData) {
         //#region Seller Information
 
         row.append('<td>1522054</td>');  //Seller NTNCNIC or "sellerNTNCNIC"
-        // row.append('<td>' + data['Manufacturer'] + '</td>');  //Seller Business Name or "sellerBusinessName"
 
         if (data['Manufacturer'].trim() == '') {
             row.append('<td>' + 'ZULTEC' + '</td>');    //Province or "buyerProvince"
@@ -178,23 +176,16 @@ function FillDataTable(jsonData) {
         else {
             row.append('<td>' + data['Manufacturer'].trim() + '</td>');    //Province or "buyerProvince"
         }
-
         if (data['Location'].trim() != 'Karachi') {
             row.append('<td>' + 'Punjab' + '</td>');    //Province or "buyerProvince"
         }
         else {
             row.append('<td>' + 'Sindh' + '</td>');    //Province or "buyerProvince"
         }
-
-        // let provincesOptions = provincesList.map(s => {
-        //     return `<option value="${s.ID}">${s.Value}</option>`;
-        // }).join('');
-        // row.append(`<td><select class="form-control provinces-dropdown">${provincesOptions}</select></td>`);
-
         row.append('<td>Korangi</td>');  //Seller Address or "sellerAddress"
 
         //#endregion
-        
+
         row.append('<td style="text-align: right;">' + new Date(data['Document Date']).toISOString().split('T')[0] + '</td>');  //Invoice Date or "invoiceDate"
 
         //#region HS Code and Unit of measurement work
@@ -225,11 +216,11 @@ function FillDataTable(jsonData) {
         }
 
         //#endregion
-        
+
         //#region "Category / Invoice Types distinguishing"
 
-        // if (data["Tax Schedule ID"].split(" ")[1].includes("16%")) {
-        if (data["Category"].trim() == "GST") {
+        // if (data["Tax Schedule ID"].trim() == "") {
+        if (1 == 1) {
             let invoiceTypesOptions = invoiceTypeList.map(s => {
                 return `<option value="${s.ID}">${s.Value}</option>`;
             }).join('');
@@ -240,17 +231,17 @@ function FillDataTable(jsonData) {
         }
 
         //#endregion
-        
+
         //#region "Scenario / Payment Types Dropdown distinguishing"
 
-        // if (data["Tax Schedule ID"].split(" ")[1].includes("16%")) {
-        if (data["Category"].trim() == "GST") {
+        // if (data["Tax Schedule ID"].trim() == "") {
+        if (1 == 1) {
             let paymentTypesOptions = paymentTypeList.map(s => {
                 return `<option value="${s.ID}">${s.Value}</option>`;
             }).join('');
             row.append(`<td><select class="form-control paymentType-dropdown">${paymentTypesOptions}</select></td>`);
         }
-        else {            
+        else {
             let scenarioOptions = scenariosList.map(s => {
                 return `<option value="${s.ID}">${s.Value}</option>`;
             }).join('');
@@ -259,32 +250,46 @@ function FillDataTable(jsonData) {
 
         //#endregion
 
+        //#region "Rate 16% / 18% distinguishung"
+
         const rateCellID = 'rate-' + index;
+        var rateText = "";
+        // if (data["Tax Schedule ID"].trim() == "") {
+        if (1 == 1) {
+            rateText = "16%";
+        }
+        else {
+            rateText = data["Tax Schedule ID"].split(" ")[1].trim();
+        }
 
-        row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">' + data["Tax Schedule ID"].split(" ")[1] + '</td>');   //It is actual line of code
-        // row.append('<td id="' + rateCellID + '" class="editable-qty" style="cursor:pointer;">16%</td>');
+        //#endregion
 
-        // row.append('<td style="text-align: right;">' + Number(data['Qty']) + '</td>');  //Production Qty or "quantity"
+        row.append('<td id="' + rateCellID + '" class="editable-rate" style="cursor:pointer;">' + rateText + '</td>');   //It is actual line of code
         const qtyCellID = 'qty-' + index;
         row.append('<td id="' + qtyCellID + '" class="editable-qty" style="text-align:right; cursor:pointer;">' + Number(data['Qty']).toLocaleString() + '</td>');
         row.append('<td>' + 0 + '</td>');   //Total or "totalValues"
         const netAmountCellID = 'netAmount-' + index;
-        //row.append('<td id="' + netAmountCellID + '" style="text-align: right;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');   //Sales Amount or "valueSalesExcludingST"
         row.append('<td id="' + netAmountCellID + '" class="editable" style="text-align: right; cursor:pointer;">' + (Number(data['Net Amount'])).toLocaleString() + '</td>');
         row.append('<td>0</td>'); //Fixed Notified Value Or Retail Price or "fixedNotifiedValueOrRetailPrice"
         const salesTaxCellID = 'salesTax-' + index;
-        if (data['Tax Schedule ID'].split(" ")[1].includes("%")) {
-            let value = data["Tax Schedule ID"].split(" ")[1]; // e.g., "18%"
-            let numberOnly = value.match(/\d+/)[0]; // "18"
-            let taxRate = Number(numberOnly); // 18 as number
-            let netAmount = Number(data["Net Amount"]); // e.g., 100
-            let taxAmount = ((netAmount * taxRate) / 100).toFixed(2);
-            //row.append('<td id="' + salesTaxCellID + '" style="text-align: right;">' + Number(taxAmount).toLocaleString() + '</td>');  //Sales Tax Applicable or "salesTaxApplicable"
-            row.append('<td id="' + salesTaxCellID + '" class="editable-tax" style="text-align: right; cursor:pointer;">' + Number(taxAmount).toLocaleString() + '</td>');
-        }
-        else {
-            row.append('<td style="text-align: right;">0</td>');  //Sales Tax Applicable or "salesTaxApplicable"
-        }
+        // if (data['Tax Schedule ID'].split(" ")[1].includes("%")) {
+        // let value = data["Tax Schedule ID"].split(" ")[1]; // e.g., "18%"
+        let value = rateText;   //16% or 18%
+        let numberOnly = value.match(/\d+/)[0]; // "18"
+        let taxRate = Number(numberOnly); // 18 as number
+        let netAmount = Number(data["Net Amount"]); // e.g., 100
+        let taxAmount = ((netAmount * taxRate) / 100).toFixed(2);
+        row.append('<td id="' + salesTaxCellID + '" class="editable-tax" style="text-align: right; cursor:pointer;">' + Number(taxAmount).toLocaleString() + '</td>');
+        // }
+        // else {
+        //     let value = "16%"; // e.g., "16%"
+        //     let numberOnly = value.match(/\d+/)[0]; // "16"
+        //     let taxRate = Number(numberOnly); // 16 as number
+        //     let netAmount = Number(data["Net Amount"]); // e.g., 100
+        //     let taxAmount = ((netAmount * taxRate) / 100).toFixed(2);
+        //     // row.append('<td style="text-align: right;">0</td>');  //Sales Tax Applicable or "salesTaxApplicable"
+        //     row.append('<td id="' + salesTaxCellID + '" class="editable-tax" style="text-align: right; cursor:pointer;">' + Number(taxAmount).toLocaleString() + '</td>');
+        // }
         row.append('<td>' + 0 + '</td>');   //Sales Tax With Held At Source or "salesTaxWithheldAtSource"
         row.append('<td></td>');    //Extra Tax or "extraTax"
         row.append('<td>' + 0 + '</td>');   //Further Tax or "furtherTax"
@@ -444,8 +449,8 @@ function FillDataTable(jsonData) {
 
     //#region Rate input field section
 
-    $('#carcassTable tbody').off('click', 'td.editable-qty');
-    $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
+    $('#carcassTable tbody').off('click', 'td.editable-rate');
+    $('#carcassTable tbody').on('click', 'td.editable-rate', function () {
         var cell = dt.cell(this);
         var originalValue = cell.data().toString().replace(/,/g, '');
         var $td = $(this);
@@ -485,50 +490,6 @@ function FillDataTable(jsonData) {
     });
 
     //#endregion
-
-    // //#region SRO Schedule input field section
-
-    // $('#carcassTable tbody').off('click', 'td.editable-qty');
-    // $('#carcassTable tbody').on('click', 'td.editable-qty', function () {
-    //     var cell = dt.cell(this);
-    //     var originalValue = cell.data().toString().replace(/,/g, '');
-    //     var $td = $(this);
-    //     if ($td.find('input').length > 0) return;
-    //     var input = $('<input type="text" class="form-control" style="text-align:right;">').val(originalValue);
-    //     $td.html(input);
-    //     input.focus().select();
-    //     var saved = false;
-    //     input.on('blur keydown', function (e) {
-    //         if (saved) return;
-    //         if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Escape')
-    //             return;
-    //         saved = true;
-    //         if (e.key === 'Escape') {
-    //             cell.data(originalValue).draw(false);
-    //             return;
-    //         }
-    //         var newValue = $(this).val().replace(/,/g, '');
-    //         if (newValue === "")
-    //             newValue = originalValue;
-    //         cell.data(newValue).draw(false);
-    //         var row = dt.row($td.closest('tr'));
-    //         var rowData = row.data();
-    //         var netAmount = Number(rowData[25].replace(/,/g, ""));
-    //         var taxAmount = 0;
-    //         if (newValue.includes("%")) {
-    //             var taxRate = parseFloat(newValue);
-    //             taxAmount = (netAmount * taxRate) / 100;
-    //             // Round to 2 decimal places
-    //             taxAmount = Number(taxAmount.toFixed(2));
-    //             Number((netAmount * taxRate) / 100).toFixed(2);
-    //         }
-    //         $td.closest('tr').find('td[id^="salesTax-"]').text(taxAmount.toLocaleString());
-    //         recalculateRow(row.index());
-
-    //     });
-    // });
-
-    // //#endregion
 
 };
 
@@ -620,126 +581,6 @@ function createDropdownMenu(data) {
 };
 
 //#endregion
-
-//#endregion
-
-//#region "Print Button"
-
-$(document).on('click', '#printBtn', function PrintQRCode() {
-
-    // var api_url = baseURLValue + 'save-qr';
-
-    //         var fbr_Invoice_No = $(this).data('id');
-    //         var tempDiv = document.createElement("div");
-    //         var qrcode = new QRCode(tempDiv, {
-    //             text: fbr_Invoice_No,
-    //             width: 200,      // pixel size
-    //             height: 200,
-    //             correctLevel: QRCode.CorrectLevel.M, // error correction level (L, M, Q, H)
-    //             version: 2       // force QR code version 2
-    //             //QRCode.CorrectLevel.L → Low (7%)
-    //             //QRCode.CorrectLevel.M → Medium (15%)
-    //             //QRCode.CorrectLevel.Q → Quartile (25%)
-    //             //QRCode.CorrectLevel.H → High (30%)
-    //         });
-    //         setTimeout(function () {
-    //             var qrImg = tempDiv.querySelector("img");
-    //             var qrBase64 = qrImg.src;
-    //             makeApiCall({
-    //                 url: api_url,
-    //                 method: 'POST',
-    //                 token: token,
-    //                 data: {
-    //                     image: qrBase64,
-    //                     invoice: fbr_Invoice_No_1
-    //                 },
-    //                 successCallback: function (result) {
-    //                     console.log(result);
-    //                 },
-    //                 errorCallback: function (xhr, status, error) {
-    //                     alert("Bad Request: " + xhr.responseText)
-    //                     console.error("Error:", error, xhr.responseText);
-    //                 }
-    //             })
-    //         });        
-
-    const fbr_Invoice_No = $(this).data('id');
-    if (fbr_Invoice_No != "" && fbr_Invoice_No != undefined) {
-        var tempDiv = document.createElement("div");
-        var qrcode = new QRCode(tempDiv, {
-            text: fbr_Invoice_No,
-            width: 200,      // pixel size
-            height: 200,
-            correctLevel: QRCode.CorrectLevel.M, // error correction level (L, M, Q, H)
-            version: 2       // force QR code version 2
-            //QRCode.CorrectLevel.L → Low (7%)
-            //QRCode.CorrectLevel.M → Medium (15%)
-            //QRCode.CorrectLevel.Q → Quartile (25%)
-            //QRCode.CorrectLevel.H → High (30%)
-        });
-        setTimeout(function () {
-            var qrImg = tempDiv.querySelector("img");
-            var imagePath = window.location.origin + "/assets/img/icons/brands/fbrdigitalinvoicing.png";
-            var printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>
-                            Print FBR Invoice #
-                        </title>
-                        <style>
-                            @page {
-                                margin: 0; /* removes browser print margins */
-                            }
-                            body {
-                                margin: 0;
-                                padding: 5px 0 0 3px;
-                                font-family: Arial, sans-serif;
-                            }
-                            .container {
-                                display: flex;
-                                flex-direction: column;
-                                align-items: flex-start;
-                            }
-                            .row {
-                                display: flex;
-                                gap: 5px;
-                                align-items: center;
-                            }
-                            .print-img {
-                                width: 40px;
-                                height: auto;
-                            }
-                            .print-text {
-                                margin-top: 2px;
-                                font-size: 8px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="container">
-                            <div class="row" style="margin-left: 42px;">
-                                <img src="${imagePath}" class="print-img" />
-                                <img src="${qrImg.src}" class="print-img" />
-                            </div>
-                            <div class="print-text">
-                                <strong>FBR Invoice # :</strong> ${fbr_Invoice_No}
-                            </div>
-                        </div>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-            printWindow.onload = function () {
-                printWindow.focus();
-                printWindow.print();
-                printWindow.close();
-            };
-        }, 100);
-    } else {
-        alert("FBR Invoice # not found. Invoice is not pushed to FBR.");
-    }
-});
 
 //#endregion
 
@@ -964,7 +805,7 @@ $('#carcassTable').on('change', '.row-checkbox', function () {
     $row.find('td').each(function () {
         rowData.push($(this).text().trim());
     });
-debugger
+    debugger
     var invoiceNoIndex = 2;
     var hsCodeIndex = 17;
     var scenarioIndex = 21;
@@ -973,7 +814,7 @@ debugger
     var alertCheck = "";
 
     var scenarioDescCheck;
-    
+
     // Find all rows with same invoice number
     var matchingRows = $('#carcassTable tbody tr').filter(function () {
         return $(this).find('td').eq(invoiceNoIndex).text().trim() === invoiceNo;
@@ -989,13 +830,6 @@ debugger
                 alertCheck = "HS Code"
                 return false;
             }
-
-            // var scenarioText = $(this).find('td').eq(scenarioIndex).find('select option:selected').text().trim();
-            // if (!scenarioText) {
-            //     invalidRow = $(this);
-            //     alertCheck = "HS Code"
-            //     return false;
-            // }
         });
 
         if (invalidRow) {
@@ -1014,36 +848,15 @@ debugger
             matchingRows.find('.row-checkbox').prop('checked', false);
             return;
         }
-        // // Check all matching checkboxes
-        // // matchingRows.find('.row-checkbox').each(function () {
-        // //     var rowId = $(this).val();
-        // //     $(this).prop('checked', true);
 
-        // //     // Add ID
-        // //     if (!selectedIds.includes(rowId)) {
-        // //         selectedIds.push(rowId);
-        // //     }
-
-        // //     // Add row data
-        // //     var rData = [];
-        // //     $(this).closest('tr').find('td').each(function () {
-        // //         rData.push($(this).text().trim());
-        // //     });
-
-        // //     var exists = selectedRows.some(r => JSON.stringify(r) === JSON.stringify(rData));
-        // //     if (!exists) {
-        // //         selectedRows.push(rData);
-        //         selectedRows.push(rowData);
-        // //     }
-        // // });
         if (rowData[22] == "16%") {
             var saleValue = parseFloat(rowData[25].replace(/,/g, ""));
             var taxCharged = parseFloat(rowData[27].replace(/,/g, ""));
             PRA_selectedRows.push({
 
                 //#region "Main Data"
-                // POSID: 821732,
-                POSID: 198791,      //Generated from PRA Registration Portal
+
+                POSID: "",      //Generated from PRA Registration Portal
                 USIN: rowData[2],   //Zultec Own Invoice No for Reference No
                 DateTime: rowData[16] + " 12:00:00",   //Zultec Invoice Date
                 BuyerPNTN: rowData[7],   //Buyer's NTN Registration No.
@@ -1080,7 +893,6 @@ debugger
                 //#endregion
 
             });
-            console.log("PRA Selected Rows", PRA_selectedRows);
         } else {
             selectedRows.push(rowData);
         }
@@ -1284,7 +1096,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                 totalBillAmount = totalSaleValue + totalTaxCharged;
                 groupedByInvoice[invoiceKey] = {
                     InvoiceNumber: "",
-                    POSID: 821732,
+                    POSID: "",
                     USIN: item.USIN,
                     DateTime: item.DateTime,
                     BuyerPNTN: item.BuyerPNTN,
@@ -1378,6 +1190,7 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                 },
                                 data: JSON.stringify(PRA_finalPayload),
                                 success: function (response) {
+                                    debugger
                                     if (response.Code == null || response.Code == "") {
                                         alert(response.validationResponse.error);
                                         $("#pageLoader").removeClass("show");
@@ -2141,7 +1954,7 @@ function handlePaymentTypeChange(dropdown, defaultValue = null) {
 
     paymentTypeCodeSelected = Number(selectedText.split(" - ")[0].trim());
     paymentType = selectedText.split(" - ")[1].trim();
-    
+
 };
 
 //#endregion
@@ -2163,7 +1976,7 @@ function handleInvoiceTypeChange(dropdown, defaultValue = null) {
 
     invoiceTypeCodeSelected = Number(selectedText.split(" - ")[0].trim());
     invoiceType = selectedText.split(" - ")[1].trim();
-    
+
 };
 
 //#endregion
