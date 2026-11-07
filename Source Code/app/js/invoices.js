@@ -1072,6 +1072,11 @@ $("#pushToFBRBtn").click(function AddBtn() {
     };
 
     if (environmentText.includes("PRA")) {
+        if (PRA_selectedRows.length === 0) {
+            alert("Please select an invoice to push.");
+            $("#pageLoader").removeClass("show");
+            return;
+        }
         if (environmentText.includes("Sandbox")) {
             PRA_invoice_Push_URL = "https://ims.pral.com.pk/ims/sandbox/api/Live/PostData";
         }
@@ -1257,13 +1262,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
                                                     token: token,
                                                     data: obj,
                                                     successCallback: function (result) {
-                                                        i++;
-                                                        if (i == PRA_totalRows) {
+                                                        // i++;
+                                                        // if (i == PRA_totalRows) {
                                                             alert("Success: " + result.actualData[0]["Message"]);
                                                             $("#pageLoader").removeClass("show");
                                                             window.location.href = baseURLValue + 'invoices';
                                                             return;
-                                                        }
+                                                        // }
                                                     },
                                                     errorCallback: function (xhr, status, error) {
                                                         alert("Bad Request: " + xhr.responseText)
