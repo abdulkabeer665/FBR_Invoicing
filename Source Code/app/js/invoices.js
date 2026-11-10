@@ -219,8 +219,8 @@ function FillDataTable(jsonData) {
 
         //#region "Category / Invoice Types distinguishing"
 
-        // if (data["Tax Schedule ID"].trim() == "") {
-        if (1 == 1) {
+        if (data["Tax Schedule ID"].trim() == "") {
+        // if (1 == 1) {
             let invoiceTypesOptions = invoiceTypeList.map(s => {
                 return `<option value="${s.ID}">${s.Value}</option>`;
             }).join('');
@@ -234,8 +234,8 @@ function FillDataTable(jsonData) {
 
         //#region "Scenario / Payment Types Dropdown distinguishing"
 
-        // if (data["Tax Schedule ID"].trim() == "") {
-        if (1 == 1) {
+        if (data["Tax Schedule ID"].trim() == "") {
+        // if (1 == 1) {
             let paymentTypesOptions = paymentTypeList.map(s => {
                 return `<option value="${s.ID}">${s.Value}</option>`;
             }).join('');
@@ -254,8 +254,8 @@ function FillDataTable(jsonData) {
 
         const rateCellID = 'rate-' + index;
         var rateText = "";
-        // if (data["Tax Schedule ID"].trim() == "") {
-        if (1 == 1) {
+        if (data["Tax Schedule ID"].trim() == "") {
+        // if (1 == 1) {
             rateText = "16%";
         }
         else {
@@ -1008,7 +1008,7 @@ $("#btnSave").click(function SaveEditButton() {
         localStorage.setItem('environmentName', "(Sandbox Environment) - " + $("#authorityDD").val().replace("_", ""));
     }
     else if ($("#tokenDD").val() == "pushInvoiceToProductionToken") {
-        $("#environment").text("(Production Environment - " + $("#authorityDD").val().replace("_", ""));
+        $("#environment").text("(Production Environment) - " + $("#authorityDD").val().replace("_", ""));
         localStorage.setItem('environmentName', "(Production Environment) - " + $("#authorityDD").val().replace("_", ""));
     }
     else {
@@ -1047,10 +1047,11 @@ $("#searchBtn").click(function () {
 
 //#region "Push to FBR button click"
 
-$("#pushToFBRBtn").click(function AddBtn() {
+$("#pushToFBRBtn").click(function AddBtn(e) {
 
     // Show full-page loader
     $("#pageLoader").addClass("show");
+    e.preventDefault();
 
     //#region "Pushing Invoices to PRA"
 
@@ -1074,6 +1075,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
     if (environmentText.includes("PRA")) {
         if (PRA_selectedRows.length === 0) {
             alert("Please select an invoice to push.");
+            $("#pageLoader").removeClass("show");
+            return;
+        }
+        var confirmed = confirm(
+            "Are you sure?\nDo you want to push (" + PRA_selectedRows.length + ") invoice(s)?"
+        );
+        if (!confirmed) {
             $("#pageLoader").removeClass("show");
             return;
         }
@@ -1304,6 +1312,13 @@ $("#pushToFBRBtn").click(function AddBtn() {
 
     else {
 
+        var confirmed = confirm(
+            "Are you sure?\nDo you want to push (" + selectedRows.length + ") invoice(s)?"
+        );
+        if (!confirmed) {
+            $("#pageLoader").removeClass("show");
+            return;
+        }
         var invoice_Push_URL = 'https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata';
         if (selectedRows.length === 0) {
             alert("Please select an invoice to push.");
